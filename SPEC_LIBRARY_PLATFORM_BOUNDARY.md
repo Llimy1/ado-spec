@@ -6,7 +6,7 @@ control. They must not be treated as one repository with two folders.
 ```text
 /Users/iminhyeog/dev/agent/
   ADO/                  # ADO Spec Library
-  ado-platform/         # ADO implementation monorepo
+  ado-platform/         # Public ADO implementation monorepo
   projects/             # product repositories managed by ADO
 ```
 
@@ -19,12 +19,17 @@ agent packet or a durable Project contract.
 | Repository | Owns | Must not own |
 |---|---|---|
 | `ADO` Spec Library | constitutional rules, templates, schemas, architecture contracts, security and state constraints | application runtime, database migrations, provider credentials, project worktrees |
-| `ado-platform` | Nest API, Worker, Control UI, database migrations, runtime adapters, CI, deployment-local configuration | unilateral redefinition of ADO constitutional rules |
+| `ado-platform` | public Nest API, Worker, Control UI, database migrations, runtime adapters, CI, deployment-local configuration | unilateral redefinition of ADO constitutional rules |
 | managed Project repository | product code, project-specific constraints, roadmap-derived documents, implementation PRs | mutation of the pinned ADO Spec revision |
 
 The Spec Library defines what ADO is permitted to do. The Platform implements
 those rules. A managed Project is a target of the Platform and has its own
 project-specific constraints under the precedence rules in `ADO_MASTER_SPEC.md`.
+
+Both ADO repositories are public in v1 so GitHub Free branch protection can
+enforce the PR-only model. Public visibility never permits secrets, raw logs,
+unredacted artifacts, private environment files, provider credentials, or
+internal database exports to enter either repository.
 
 ## 2. Spec Library Repository Rules
 

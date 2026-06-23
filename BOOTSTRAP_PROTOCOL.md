@@ -167,7 +167,7 @@ The bootstrap process must not create ad hoc worktrees under user project roots.
 ### B0: Human-Governed Repository
 
 Initialize and protect the ADO Spec Library Git repository, approve and publish
-its first immutable manifest, then create the separate `ado-platform`
+its first immutable manifest, then create the separate public `ado-platform`
 repository, protect branches, establish `integrate`, and commit an
 `ado-spec.lock.json` that pins that manifest. Human review is the only approval
 mechanism. No Worker, runner, or API command is trusted yet.

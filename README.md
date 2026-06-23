@@ -8,6 +8,9 @@ This repository is the **ADO Spec Library**, not the ADO application monorepo.
 The NestJS implementation lives in a separate `ado-platform` repository and
 pins an approved immutable Spec Library revision.
 
+Both repositories are public in v1. They contain no secrets, raw operational
+logs, private packet payloads, provider credentials, or database exports.
+
 ## Canonical Documents
 
 - `ADO_MASTER_SPEC.md`: compressed master specification.
