@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Codex Planner Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "role",
+    "status",
+    "summary",
+    "target",
+    "feature_unit_drafts",
+    "component_work_drafts",
+    "dependency_notes",
+    "risk_notes",
+    "artifacts",
+    "assumptions",
+    "questions",
+    "risks",
+    "policy_issues",
+    "next_recommended_action",
+    "failure"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "role": { "const": "codex_planner" },
+    "status": { "enum": ["succeeded", "human_required", "blocked", "failed"] },
+    "summary": { "type": "string" },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_key", "roadmap_key", "feature_unit_key", "component_work_key", "job_id", "agent_run_id"],
+      "properties": {
+        "project_key": { "type": "string" },
+        "roadmap_key": { "type": ["string", "null"] },
+        "feature_unit_key": { "type": ["string", "null"] },
+        "component_work_key": { "type": ["string", "null"] },
+        "job_id": { "type": ["string", "null"] },
+        "agent_run_id": { "type": ["string", "null"] }
+      }
+    },
+    "feature_unit_drafts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["feature_unit_key", "title", "goal", "scope", "out_of_scope", "acceptance_criteria", "human_verification_items", "source_refs", "risk_level"],
+        "properties": {
+          "feature_unit_key": { "type": "string" },
+          "title": { "type": "string" },
+          "goal": { "type": "string" },
+          "scope": { "type": "array", "items": { "type": "string" } },
+          "out_of_scope": { "type": "array", "items": { "type": "string" } },
+          "acceptance_criteria": { "type": "array", "items": { "type": "string" } },
+          "human_verification_items": { "type": "array", "items": { "type": "string" } },
+          "source_refs": { "type": "array", "items": { "type": "string" } },
+          "risk_level": { "enum": ["low", "normal", "high", "security_sensitive", "production_data_related"] }
+        }
+      }
+    },
+    "component_work_drafts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["component_work_key", "feature_unit_key", "component_key", "repository_key", "objective", "allowed_paths", "risk_level", "source_refs"],
+        "properties": {
+          "component_work_key": { "type": "string" },
+          "feature_unit_key": { "type": "string" },
+          "component_key": { "type": "string" },
+          "repository_key": { "type": "string" },
+          "objective": { "type": "string" },
+          "allowed_paths": { "type": "array", "items": { "type": "string" } },
+          "risk_level": { "enum": ["low", "normal", "high", "security_sensitive", "production_data_related"] },
+          "source_refs": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "dependency_notes": { "type": "array", "items": { "type": "string" } },
+    "risk_notes": { "type": "array", "items": { "type": "string" } },
+    "artifacts": { "type": "array", "items": { "type": "string" } },
+    "assumptions": { "type": "array", "items": { "type": "string" } },
+    "questions": { "type": "array", "items": { "type": "string" } },
+    "risks": { "type": "array", "items": { "type": "string" } },
+    "policy_issues": { "type": "array", "items": { "type": "string" } },
+    "next_recommended_action": { "type": "string" },
+    "failure": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["failure_type", "failure_reason", "failure_summary", "retryable", "requires_human", "requires_revision", "safety_related", "raw_error_artifact_key", "next_recommended_action"],
+      "properties": {
+        "failure_type": { "enum": ["process_error", "timeout", "schema_validation_failed", "model_refusal", "model_unclear", "tool_error", "command_failed", "verification_failed", "policy_denied", "safety_violation", "budget_exceeded", "auth_required", "dependency_missing", "external_service_failed", "human_input_required", "unknown"] },
+        "failure_reason": { "type": "string" },
+        "failure_summary": { "type": "string" },
+        "retryable": { "type": "boolean" },
+        "requires_human": { "type": "boolean" },
+        "requires_revision": { "type": "boolean" },
+        "safety_related": { "type": "boolean" },
+        "raw_error_artifact_key": { "type": ["string", "null"] },
+        "next_recommended_action": { "type": "string" }
+      }
+    }
+  }
+}

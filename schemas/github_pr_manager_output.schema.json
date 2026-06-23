@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GitHub PR Manager Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "role",
+    "status",
+    "summary",
+    "target",
+    "repository_key",
+    "base_branch",
+    "head_branch",
+    "pr_url",
+    "pr_number",
+    "artifacts",
+    "assumptions",
+    "questions",
+    "risks",
+    "policy_issues",
+    "next_recommended_action",
+    "failure"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "role": { "const": "github_pr_manager" },
+    "status": { "enum": ["created", "synced", "human_required", "policy_denied", "failed"] },
+    "summary": { "type": "string" },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_key", "roadmap_key", "feature_unit_key", "component_work_key", "job_id", "agent_run_id"],
+      "properties": {
+        "project_key": { "type": "string" },
+        "roadmap_key": { "type": ["string", "null"] },
+        "feature_unit_key": { "type": ["string", "null"] },
+        "component_work_key": { "type": ["string", "null"] },
+        "job_id": { "type": ["string", "null"] },
+        "agent_run_id": { "type": ["string", "null"] }
+      }
+    },
+    "repository_key": { "type": "string" },
+    "base_branch": { "type": "string" },
+    "head_branch": { "type": "string" },
+    "pr_url": { "type": ["string", "null"] },
+    "pr_number": { "type": ["integer", "null"] },
+    "artifacts": { "type": "array", "items": { "type": "string" } },
+    "assumptions": { "type": "array", "items": { "type": "string" } },
+    "questions": { "type": "array", "items": { "type": "string" } },
+    "risks": { "type": "array", "items": { "type": "string" } },
+    "policy_issues": { "type": "array", "items": { "type": "string" } },
+    "next_recommended_action": { "type": "string" },
+    "failure": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["failure_type", "failure_reason", "failure_summary", "retryable", "requires_human", "requires_revision", "safety_related", "raw_error_artifact_key", "next_recommended_action"],
+      "properties": {
+        "failure_type": { "enum": ["process_error", "timeout", "schema_validation_failed", "model_refusal", "model_unclear", "tool_error", "command_failed", "verification_failed", "policy_denied", "safety_violation", "budget_exceeded", "auth_required", "dependency_missing", "external_service_failed", "human_input_required", "unknown"] },
+        "failure_reason": { "type": "string" },
+        "failure_summary": { "type": "string" },
+        "retryable": { "type": "boolean" },
+        "requires_human": { "type": "boolean" },
+        "requires_revision": { "type": "boolean" },
+        "safety_related": { "type": "boolean" },
+        "raw_error_artifact_key": { "type": ["string", "null"] },
+        "next_recommended_action": { "type": "string" }
+      }
+    }
+  }
+}

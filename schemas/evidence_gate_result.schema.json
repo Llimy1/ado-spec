@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ADO Evidence Gate Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "gate_result_key",
+    "transition_request_key",
+    "gate_name",
+    "status",
+    "target",
+    "checked_evidence",
+    "missing_evidence",
+    "rejected_evidence",
+    "warnings",
+    "reason",
+    "checked_by",
+    "checked_at"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "gate_result_key": { "type": "string" },
+    "transition_request_key": { "type": "string" },
+    "gate_name": { "type": "string" },
+    "status": { "enum": ["passed", "failed", "human_required", "blocked"] },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_type", "target_key"],
+      "properties": {
+        "target_type": { "type": "string" },
+        "target_key": { "type": "string" }
+      }
+    },
+    "checked_evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["evidence_ref", "evidence_type", "status", "reason"],
+        "properties": {
+          "evidence_ref": { "type": "string" },
+          "evidence_type": { "type": "string" },
+          "status": { "enum": ["accepted", "rejected", "missing", "warning"] },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "missing_evidence": { "type": "array", "items": { "type": "string" } },
+    "rejected_evidence": { "type": "array", "items": { "type": "string" } },
+    "warnings": { "type": "array", "items": { "type": "string" } },
+    "reason": { "type": "string" },
+    "checked_by": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actor_type", "actor_key"],
+      "properties": {
+        "actor_type": { "enum": ["evidence_gate", "policy_engine", "system", "human"] },
+        "actor_key": { "type": "string" }
+      }
+    },
+    "checked_at": { "type": "string" }
+  }
+}

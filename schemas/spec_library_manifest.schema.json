@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ADO Spec Library Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifestSchemaVersion",
+    "specRevision",
+    "approvedRef",
+    "manifestSha256",
+    "canonicalDocumentHashes",
+    "templateHashes",
+    "schemaHashes",
+    "generatedAt"
+  ],
+  "properties": {
+    "manifestSchemaVersion": { "const": 1 },
+    "specRevision": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "approvedRef": { "type": "string", "minLength": 1, "maxLength": 255 },
+    "manifestSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 of canonical JSON with this field omitted."
+    },
+    "canonicalDocumentHashes": { "$ref": "#/$defs/hashMap" },
+    "templateHashes": { "$ref": "#/$defs/hashMap" },
+    "schemaHashes": { "$ref": "#/$defs/hashMap" },
+    "generatedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "hashMap": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    }
+  }
+}

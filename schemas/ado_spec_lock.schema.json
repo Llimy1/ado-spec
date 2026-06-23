@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ADO Platform Spec Lock",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "lockSchemaVersion",
+    "specRepository",
+    "specRevision",
+    "approvedRef",
+    "manifestSha256",
+    "canonicalDocumentHashes"
+  ],
+  "properties": {
+    "lockSchemaVersion": { "const": 1 },
+    "specRepository": { "type": "string", "minLength": 1, "maxLength": 2048 },
+    "specRevision": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "approvedRef": { "type": "string", "minLength": 1, "maxLength": 255 },
+    "manifestSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "canonicalDocumentHashes": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    }
+  }
+}

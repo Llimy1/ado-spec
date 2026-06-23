@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Verification Runner Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "role",
+    "status",
+    "summary",
+    "target",
+    "verification_profile_key",
+    "command_results",
+    "required_passed",
+    "optional_warnings",
+    "artifacts",
+    "assumptions",
+    "questions",
+    "risks",
+    "policy_issues",
+    "next_recommended_action",
+    "failure"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "role": { "const": "system_verifier" },
+    "status": { "enum": ["passed", "failed", "timed_out", "skipped", "cancelled"] },
+    "summary": { "type": "string" },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_key", "roadmap_key", "feature_unit_key", "component_work_key", "job_id", "agent_run_id"],
+      "properties": {
+        "project_key": { "type": "string" },
+        "roadmap_key": { "type": ["string", "null"] },
+        "feature_unit_key": { "type": ["string", "null"] },
+        "component_work_key": { "type": ["string", "null"] },
+        "job_id": { "type": ["string", "null"] },
+        "agent_run_id": { "type": ["string", "null"] }
+      }
+    },
+    "verification_profile_key": { "type": "string" },
+    "command_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["command_key", "status", "exit_code", "duration_ms", "timed_out", "stdout_artifact_key", "stderr_artifact_key", "summary"],
+        "properties": {
+          "command_key": { "type": "string" },
+          "status": { "enum": ["succeeded", "failed", "timed_out", "skipped", "cancelled"] },
+          "exit_code": { "type": ["integer", "null"] },
+          "duration_ms": { "type": ["integer", "null"] },
+          "timed_out": { "type": "boolean" },
+          "stdout_artifact_key": { "type": ["string", "null"] },
+          "stderr_artifact_key": { "type": ["string", "null"] },
+          "summary": { "type": "string" }
+        }
+      }
+    },
+    "required_passed": { "type": "boolean" },
+    "optional_warnings": { "type": "array", "items": { "type": "string" } },
+    "artifacts": { "type": "array", "items": { "type": "string" } },
+    "assumptions": { "type": "array", "items": { "type": "string" } },
+    "questions": { "type": "array", "items": { "type": "string" } },
+    "risks": { "type": "array", "items": { "type": "string" } },
+    "policy_issues": { "type": "array", "items": { "type": "string" } },
+    "next_recommended_action": { "type": "string" },
+    "failure": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["failure_type", "failure_reason", "failure_summary", "retryable", "requires_human", "requires_revision", "safety_related", "raw_error_artifact_key", "next_recommended_action"],
+      "properties": {
+        "failure_type": { "enum": ["process_error", "timeout", "schema_validation_failed", "model_refusal", "model_unclear", "tool_error", "command_failed", "verification_failed", "policy_denied", "safety_violation", "budget_exceeded", "auth_required", "dependency_missing", "external_service_failed", "human_input_required", "unknown"] },
+        "failure_reason": { "type": "string" },
+        "failure_summary": { "type": "string" },
+        "retryable": { "type": "boolean" },
+        "requires_human": { "type": "boolean" },
+        "requires_revision": { "type": "boolean" },
+        "safety_related": { "type": "boolean" },
+        "raw_error_artifact_key": { "type": ["string", "null"] },
+        "next_recommended_action": { "type": "string" }
+      }
+    }
+  }
+}

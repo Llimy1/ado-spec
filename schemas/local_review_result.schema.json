@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Local Review Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "reviewer",
+    "status",
+    "summary",
+    "target",
+    "overall_risk",
+    "findings",
+    "acceptance_criteria_assessment",
+    "artifacts",
+    "questions",
+    "limitations",
+    "assumptions",
+    "risks",
+    "policy_issues",
+    "next_recommended_action",
+    "failure"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "reviewer": {
+      "enum": ["qwen_coder", "devstral", "llama"]
+    },
+    "status": {
+      "enum": ["completed", "partial", "failed"]
+    },
+    "summary": { "type": "string" },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_key", "roadmap_key", "feature_unit_key", "component_work_key", "job_id", "agent_run_id"],
+      "properties": {
+        "project_key": { "type": "string" },
+        "roadmap_key": { "type": ["string", "null"] },
+        "feature_unit_key": { "type": ["string", "null"] },
+        "component_work_key": { "type": ["string", "null"] },
+        "job_id": { "type": ["string", "null"] },
+        "agent_run_id": { "type": ["string", "null"] }
+      }
+    },
+    "overall_risk": {
+      "enum": ["low", "medium", "high", "unknown"]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "severity",
+          "category",
+          "title",
+          "claim",
+          "evidence",
+          "file_path",
+          "line_start",
+          "line_end",
+          "suggested_fix",
+          "confidence"
+        ],
+        "properties": {
+          "severity": { "enum": ["P0", "P1", "P2", "P3"] },
+          "category": {
+            "enum": [
+              "bug",
+              "security",
+              "test",
+              "ux",
+              "requirement",
+              "performance",
+              "maintainability",
+              "docs",
+              "unknown"
+            ]
+          },
+          "title": { "type": "string" },
+          "claim": { "type": "string" },
+          "evidence": { "type": "string" },
+          "file_path": { "type": ["string", "null"] },
+          "line_start": { "type": ["integer", "null"] },
+          "line_end": { "type": ["integer", "null"] },
+          "suggested_fix": { "type": ["string", "null"] },
+          "confidence": { "enum": ["low", "medium", "high"] }
+        }
+      }
+    },
+    "acceptance_criteria_assessment": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterion_key", "status", "reason"],
+        "properties": {
+          "criterion_key": { "type": "string" },
+          "status": {
+            "enum": ["satisfied", "not_satisfied", "unclear"]
+          },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "questions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "limitations": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "risks": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "policy_issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "next_recommended_action": { "type": "string" },
+    "failure": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["failure_type", "failure_reason", "failure_summary", "retryable", "requires_human", "requires_revision", "safety_related", "raw_error_artifact_key", "next_recommended_action"],
+      "properties": {
+        "failure_type": { "enum": ["process_error", "timeout", "schema_validation_failed", "model_refusal", "model_unclear", "tool_error", "command_failed", "verification_failed", "policy_denied", "safety_violation", "budget_exceeded", "auth_required", "dependency_missing", "external_service_failed", "human_input_required", "unknown"] },
+        "failure_reason": { "type": "string" },
+        "failure_summary": { "type": "string" },
+        "retryable": { "type": "boolean" },
+        "requires_human": { "type": "boolean" },
+        "requires_revision": { "type": "boolean" },
+        "safety_related": { "type": "boolean" },
+        "raw_error_artifact_key": { "type": ["string", "null"] },
+        "next_recommended_action": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ADO Transition Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_key",
+    "idempotency_key",
+    "target",
+    "expected_current_status",
+    "requested_transition",
+    "requested_next_status",
+    "requested_by",
+    "reason",
+    "source_refs",
+    "evidence_refs",
+    "risk_level",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "request_key": { "type": "string" },
+    "idempotency_key": { "type": "string" },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_type", "target_key", "project_key", "feature_unit_key", "component_work_key"],
+      "properties": {
+        "target_type": {
+          "enum": ["roadmap", "feature_unit", "component_work", "job", "agent_run", "command_run", "verification_run", "review_group", "artifact", "pull_request", "human_verification_item", "safety_event", "incident_report", "external_transfer_event"]
+        },
+        "target_key": { "type": "string" },
+        "project_key": { "type": ["string", "null"] },
+        "feature_unit_key": { "type": ["string", "null"] },
+        "component_work_key": { "type": ["string", "null"] }
+      }
+    },
+    "expected_current_status": { "type": "string" },
+    "requested_transition": { "type": "string" },
+    "requested_next_status": { "type": "string" },
+    "requested_by": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actor_type", "actor_key", "role"],
+      "properties": {
+        "actor_type": { "enum": ["human", "worker", "system", "codex", "local_model", "claude_import", "github", "unknown"] },
+        "actor_key": { "type": "string" },
+        "role": { "type": "string" }
+      }
+    },
+    "reason": { "type": "string" },
+    "source_refs": { "type": "array", "items": { "type": "string" } },
+    "evidence_refs": { "type": "array", "items": { "type": "string" } },
+    "risk_level": { "enum": ["low", "normal", "high", "security_sensitive", "production_data_related"] },
+    "created_at": { "type": "string" }
+  }
+}
