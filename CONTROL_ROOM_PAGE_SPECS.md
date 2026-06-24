@@ -1507,3 +1507,241 @@ active or not PR-ready without a raw log or color-only inference.
 - [WAI-ARIA Modal Dialog Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/): planning decision dialog behavior.
 - [WAI-ARIA Grid Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/grid/): native table is preferred for non-editable data.
 - [W3C Complex Images](https://www.w3.org/WAI/tutorials/images/complex/): dependency diagrams need equivalent structured relationships.
+
+---
+
+## P-05: Component Work
+
+### P-05.1 Identity And Safety Boundary
+
+| Property | Contract |
+|---|---|
+| Route | `/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}` |
+| Primary question | What exact implementation/PR unit is this, what evidence has it produced, and which server-approved intervention is currently safe? |
+| Read authority | matching nested `GET /v1/.../component-works/{componentWorkKey}` endpoint |
+| Commands | pause, resume, retry, cancel, request PR; only when returned in `allowedActions` |
+| Non-goals | terminal access, arbitrary command execution, direct branch checkout, worktree-path disclosure, direct status writes, PR merge, or retrying a failed attempt without recovery evidence |
+
+Component Work is the one branch/one PR execution unit. A `single` Work has one
+primary Component root. A `coordinated` Work has one primary root plus declared
+contributing/shared-contract roots, but still one branch and one PR. The page
+must make that atomic boundary visible before it exposes any command.
+
+### P-05.2 Detail Projection
+
+```text
+GET /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}
+```
+
+The response is a no-store bounded projection. Absolute worktree paths,
+environment variables, provider credentials, raw command argv, raw logs, and
+unredacted artifact content never appear.
+
+```ts
+interface ComponentWorkDetailResponse {
+  work: {
+    componentWorkKey: string
+    title: string
+    intent: string
+    state: string
+    riskLevel: string
+    executionScope: 'single' | 'coordinated'
+    required: boolean
+    primaryComponent: { key: string; displayName: string }
+    scopes: Array<{
+      componentKey: string
+      displayName: string
+      relativeRoot: string
+      role: 'primary' | 'contributing' | 'shared_contract'
+      required: boolean
+    }>
+    repository: {
+      remoteUrlRedacted: string
+      integrationBranch: string
+      baseBranch: string
+      headBranch: string | null
+    }
+    worktree: { worktreeKey: string; status: string; baseCommit: string | null; headCommit: string | null } | null
+    allowedPaths: { version: string; writeRuleCount: number; href: string | null }
+    resourceVersion: string
+  }
+  commandGate: {
+    paused: boolean
+    pauseReason: string | null
+    allowedActions: Array<'pause' | 'resume' | 'retry' | 'cancel' | 'request_pr'>
+    actionRequirements: Record<string, {
+      expectedResourceVersion: string
+      reasonRequired: boolean
+      confirmation: 'none' | 'dialog' | 'destructive_dialog'
+    }>
+  }
+  activeExecution: {
+    jobAttemptId: string | null
+    jobKey: string | null
+    state: 'none' | 'queued' | 'leased' | 'running' | 'timed_out' | 'failed' | 'human_required'
+    runnerLabel: string | null
+    startedAt: string | null
+    timeoutAt: string | null
+    lastHeartbeatAt: string | null
+    href: string | null
+  }
+  verification: {
+    state: 'not_started' | 'running' | 'passed' | 'failed' | 'blocked'
+    latestVerificationRunId: string | null
+    requiredCommandCount: number
+    passedCommandCount: number
+    failedCommandCount: number
+    href: string | null
+  }
+  review: {
+    state: 'not_started' | 'local_running' | 'local_completed' | 'arbiter_running' | 'passed' | 'changes_requested' | 'human_required'
+    reviewGroupId: string | null
+    acceptedP0P1FindingCount: number
+    unresolvedFindingCount: number
+    href: string | null
+  }
+  pullRequest: {
+    pullRequestId: string
+    url: string
+    baseBranch: string
+    headBranch: string
+    status: string
+    createdAt: string
+  } | null
+  attempts: {
+    items: Array<{
+      jobAttemptId: string
+      attemptNumber: number
+      state: string
+      workerLabel: string | null
+      startedAt: string | null
+      finishedAt: string | null
+      timeoutAt: string | null
+      failureCode: string | null
+      redactedSummary: string | null
+      href: string
+    }>
+    omittedCount: number
+  }
+  timeline: { items: Array<{ eventKey: string; occurredAt: string; summary: string; evidenceHref: string | null }>; omittedCount: number }
+  snapshot: { observedAt: string; requestId: string; resourceVersion: string }
+}
+```
+
+`relativeRoot` is repository-relative, normalized, and allowed only because it
+is part of the approved ComponentRepository scope. Local absolute paths remain
+Worker-only. `baseBranch` must be `integrate`; any projection that reports
+another base is an error/incident condition, not a selectable value.
+
+### P-05.3 Command Contract
+
+Every command uses the nested route, `Idempotency-Key`, expected resource
+version, PolicyDecision, EvidenceGate, StateMachine, AuditEvent, and durable
+response reference. The browser submits no shell, path, branch, model, or
+command-line input.
+
+```text
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}/commands/pause
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}/commands/resume
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}/commands/retry
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}/commands/cancel
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}/commands/request-pr
+```
+
+All command bodies have `expectedResourceVersion` and `reason`. `reason` is
+required and 10 to 2,000 characters for pause, resume, retry, and cancel;
+request PR accepts an optional 2,000-character note. `cancel` is destructive:
+its alert dialog names the Work key, current attempt, irreversible effects, and
+the required reason. Initial focus is `취소`, not the destructive action.
+
+`pause` creates a PauseRecord and does not counterfeit a Component Work state.
+`resume` records the required HumanDecision and only schedules new work after
+policy allows it. `retry` can create a new JobAttempt only after retry policy
+and side-effect recovery evidence pass; it never rewrites a terminal attempt.
+`request_pr` can enqueue a PR job only when server evidence proves
+`ready_for_pr`; it creates a PR but never merges it.
+
+`409` preserves the form and requires a fresh snapshot. `422` displays the
+stable policy/evidence reason and link when authorized. A `202` result is
+rendered as `요청됨`, never as a completed pause/retry/PR.
+
+### P-05.4 Layout, Evidence, And Live State
+
+At `1440px` and above:
+
+```text
+breadcrumb
+identity: Work key, state, scope, required flag, snapshot
+command strip: pause flag and only server-authorized controls
+scope/repository/branch panel (7 columns) | active execution panel (5 columns)
+verification panel (6 columns) | review panel (6 columns)
+attempt history table (full width)
+PR panel (when present) and append-only timeline
+```
+
+The scope panel lists every participating Component and role. Repository data
+shows redacted remote URL, integration branch, base branch, head branch, commit
+identifiers, worktree key/status, and allowed-path rule version/count. It never
+shows a local path as a clickable filesystem affordance.
+
+The active-execution panel distinguishes `queued`, `leased`, `running`,
+`timed_out`, `failed`, and `human_required`. Elapsed time is not a progress
+bar. Near-timeout begins below 20 percent remaining and shows the exact deadline.
+Verification displays command counts and latest run link; Review displays local
+council/arbiter state plus accepted P0/P1 and unresolved counts. Neither panel
+claims success from an Agent's self-report.
+
+Attempts use a native table with attempt number, state, Worker, start/end,
+deadline, redacted failure code/summary, and Run Detail link. It keeps at most
+20 records with an explicit history route. The timeline is a native ordered
+list; it does not stream raw output.
+
+Project SSE marks the page stale and increments pending updates. It never
+replaces command eligibility or attempt rows during a focused confirmation
+dialog. After a command response or reconnect, the page re-fetches one complete
+snapshot before enabling new commands.
+
+### P-05.5 Responsive, Accessibility, And Verification
+
+At `1280px+`, attempts are a full table. At `1024-1279px`, columns collapse to
+attempt/state/time/summary/open. Below `1024px`, attempts are cards and scope
+roles are a labelled list. Below `768px`, command controls become a vertical
+group above all evidence; no destructive action enters a fixed bottom bar.
+
+The command strip is a labelled toolbar only when two or more controls are
+available; otherwise it is ordinary document-order buttons. Each control has
+an explicit accessible label, disabled reason, and result announcement. Dialogs
+follow P-03 focus rules. Keyboard focus never enters an SVG, log, or hidden
+attempt row. All status color has text/icon redundancy.
+
+Acceptance requires controller/OpenAPI validation of every body and nested key;
+integration proof that pause is a PauseRecord, retry creates a new attempt,
+PR target is `integrate`, and no command bypasses policy/evidence; UI tests for
+all `200/202/409/422` command results and focus restoration; visual checks for
+single/coordinated scope, active timeout, failed verification, review changes,
+paused, incident hold, PR created, and long branch/path values; and a human
+check that no control can be mistaken for a merge, terminal, or direct state
+edit.
+
+### P-05.6 Planned Frontend Boundaries
+
+```text
+apps/control/app/(control)/projects/[projectKey]/roadmaps/[roadmapKey]/feature-units/[featureUnitKey]/component-works/[componentWorkKey]/page.tsx
+apps/control/features/component-work/component-work-detail-route.tsx
+apps/control/features/component-work/component-work-command-toolbar.tsx
+apps/control/features/component-work/component-work-command-dialog.tsx
+apps/control/features/component-work/component-work-scope-panel.tsx
+apps/control/features/component-work/active-execution-panel.tsx
+apps/control/features/component-work/verification-summary-panel.tsx
+apps/control/features/component-work/review-summary-panel.tsx
+apps/control/features/component-work/job-attempt-history.tsx
+apps/control/features/component-work/component-work-timeline.tsx
+packages/contracts/src/component-work/component-work-detail.contract.ts
+packages/contracts/src/component-work/component-work-commands.contract.ts
+```
+
+### P-05.7 Standards References
+
+- [WAI-ARIA Alert Dialog Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog/): destructive cancel confirmation.
+- [WAI-ARIA Modal Dialog Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/): focus containment and return.
+- [WAI-ARIA Grid Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/grid/): attempts remain native data tables, not composite grids.
