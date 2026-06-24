@@ -116,6 +116,7 @@ Representative endpoint families are:
 GET /v1/projects
 GET /v1/events
 GET /v1/projects/{projectKey}
+GET /v1/projects/{projectKey}/roadmaps
 GET /v1/projects/{projectKey}/overview
 GET /v1/projects/{projectKey}/roadmaps/{roadmapKey}
 GET /v1/feature-units/{featureUnitKey}
@@ -146,6 +147,7 @@ runner finishes.
 ```text
 POST /v1/feature-units/{featureUnitKey}/commands/request-approval
 POST /v1/feature-units/{featureUnitKey}/commands/record-human-decision
+POST /v1/roadmaps/{roadmapKey}/commands/record-human-decision
 POST /v1/component-works/{componentWorkKey}/commands/pause
 POST /v1/component-works/{componentWorkKey}/commands/resume
 POST /v1/component-works/{componentWorkKey}/commands/retry

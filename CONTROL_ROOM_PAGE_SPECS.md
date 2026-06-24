@@ -866,3 +866,326 @@ without interpreting an undocumented metric or opening a raw log.
   tooltip trigger, focus, escape, and `aria-describedby` behavior.
 - [MDN Container Queries](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_container_queries):
   component-local responsive adaptation.
+
+---
+
+## P-03: Roadmaps
+
+### P-03.1 Identity And Routes
+
+| Property | Roadmap index | Roadmap detail |
+|---|---|---|
+| Route | `/projects/{projectKey}/roadmaps` | `/projects/{projectKey}/roadmaps/{roadmapKey}` |
+| Primary question | Which approved or pending plan governs this Project? | Is this Roadmap valid, approved, and decomposed into executable Feature Units without unresolved dependency risk? |
+| Read authority | `GET /v1/projects/{projectKey}/roadmaps` | `GET /v1/projects/{projectKey}/roadmaps/{roadmapKey}` |
+| State-changing actions | none | record an allowed human planning decision |
+| Non-goals | document editing, markdown source overwrite, Feature Unit implementation control, direct state editing, merge/deploy control | same |
+
+Roadmaps are human-provided planning sources made executable only after analysis
+and approval. The UI never treats a copied markdown document or an Agent
+summary as approved truth. It exposes source provenance, current plan state,
+Feature Unit decomposition, dependency conditions, and the exact human decision
+required before execution.
+
+### P-03.2 API Contract
+
+The index endpoint is a new bounded read projection:
+
+```text
+GET /v1/projects/{projectKey}/roadmaps
+  ?state={draft|analyzed|review_ready|approved|active|completed|archived|blocked|cancelled|incident_hold}
+  &sort={activity|sequence|name}    (default activity desc)
+  &cursor={opaque keyset cursor}
+  &limit={1..100, default 25}
+```
+
+The detail endpoint has no client-calculated state and returns the following
+projection. Both endpoints are `private, no-store` and return `requestId`,
+`observedAt`, and `resourceVersion`.
+
+```ts
+interface RoadmapListItem {
+  roadmapKey: string
+  title: string
+  state: string
+  source: { version: string; importedAt: string; contentSha256: string }
+  featureUnitSummary: {
+    total: number
+    approved: number
+    active: number
+    blocked: number
+    closed: number
+  }
+  pendingPlanningDecision: boolean
+  lastCommittedEventAt: string
+  href: string
+}
+
+interface RoadmapDetailResponse {
+  roadmap: {
+    roadmapKey: string
+    title: string
+    summary: string
+    state: string
+    source: {
+      artifactKey: string
+      sourceKind: string
+      sourceVersion: string
+      contentSha256: string
+      importedAt: string
+      renderedDocumentHref: string | null
+    }
+    analyzedAt: string | null
+    approvedAt: string | null
+    resourceVersion: string
+  }
+  planningGate: {
+    state: 'not_ready' | 'analysis_required' | 'human_decision_required' | 'approved' | 'blocked'
+    explanationCode: string
+    allowedActions: Array<'record_human_decision'>
+    decisionRequirements: {
+      canApprove: boolean
+      canRequestChanges: boolean
+      changeRequestReasonRequired: boolean
+      expectedResourceVersion: string
+    }
+  }
+  featureUnits: {
+    items: Array<{
+      featureUnitKey: string
+      sequenceNumber: number
+      title: string
+      state: string
+      riskLevel: string
+      dependency: {
+        requiredPrerequisiteCount: number
+        unsatisfiedPrerequisiteCount: number
+        blockingDependentCount: number
+      }
+      componentWork: {
+        requiredCount: number
+        openCount: number
+        blockedCount: number
+        prCreatedCount: number
+      }
+      pendingHumanDecisionCount: number
+      href: string
+    }>
+    totalCount: number
+    omittedCount: number
+  }
+  dependencyMap: {
+    isTruncated: boolean
+    omittedNodeCount: number
+    nodes: Array<{ featureUnitKey: string; title: string; state: string; href: string }>
+    edges: Array<{ fromFeatureUnitKey: string; toFeatureUnitKey: string; relation: 'depends_on' }>
+    accessibleRows: Array<{ featureUnitKey: string; dependsOn: string[]; blocks: string[] }>
+  }
+  recentPlanningActivity: {
+    items: Array<{
+      eventKey: string
+      occurredAt: string
+      actorLabel: string
+      summary: string
+      evidenceHref: string | null
+    }>
+    omittedCount: number
+  }
+  snapshot: { observedAt: string; requestId: string; resourceVersion: string }
+}
+```
+
+The detail response returns at most 50 Feature Units, 24 graph nodes, 48 graph
+edges, and 10 planning events. A larger Roadmap remains navigable: the Feature
+Unit list stays cursor-paginated through its dedicated route, and the response
+reports omission instead of truncating silently.
+
+### P-03.3 Planning Decision And Command Contract
+
+`analyzed -> review_ready` is a system transition gated by a valid
+`RoadmapAnalysis`; the browser has no command for it. Roadmap planning approval
+requires a HumanDecision, so the Control API exposes only the following human
+command. It creates a typed TransitionRequest and never writes a Roadmap state
+directly.
+
+```text
+POST /v1/roadmaps/{roadmapKey}/commands/record-human-decision
+```
+
+Both require `Idempotency-Key`. The record-decision request body is:
+
+```ts
+interface RecordRoadmapPlanningDecisionRequest {
+  decision: 'approved' | 'changes_requested'
+  expectedResourceVersion: string
+  reason?: string
+}
+```
+
+`changes_requested` requires a non-empty, trimmed reason of 10 to 2,000
+characters. `approved` may include an optional 2,000-character rationale.
+The API validates the current allowed action, authenticated actor, expected
+version, policy decision, and evidence gate. It returns `202` with a durable
+TransitionRequest/HumanDecision reference when asynchronous work remains, or
+`422` with a stable policy/evidence reason when the transition is not allowed.
+
+The UI derives buttons only from `planningGate.allowedActions`. It does not
+infer that `review_ready` means approval is always permitted. The approve and
+request-changes controls live inside a review panel with source and decomposition
+evidence links, never in the Roadmap index table.
+
+`승인` opens an `alertdialog` because it allows downstream Feature Units to
+become executable. Its initial focus is the least destructive visible action,
+`취소`. `변경 요청` opens a labelled modal dialog containing a required reason
+textarea. Closing either dialog returns focus to its invoker; a `409` version
+conflict preserves entered text and asks the owner to refresh against the new
+Roadmap version before resubmitting.
+
+### P-03.4 Roadmap Detail Layout
+
+At `1440px` and above, the page order is:
+
+```text
+breadcrumb
+Roadmap identity, current state, source version/hash, freshness
+planning-gate panel (when not approved/active/completed)
+Feature Unit decomposition table
+recent planning activity (7 columns) | dependency figure and relation list (5 columns)
+```
+
+The identity header makes provenance inspectable: source kind, imported time,
+version, content SHA, analyzed time, and approved time. The document link opens
+only a redacted, authorized render of the source Artifact. A source file is not
+editable in the browser and the hash is copied through the standard machine
+value control.
+
+The planning-gate panel is the semantic center of the page. It shows current
+Roadmap state, what condition is missing, the transition that becomes possible,
+and the source/decomposition evidence links. It does not simply say
+"approval required". For example:
+
+```text
+Current: review_ready
+Required: Human planning approval
+Evidence: Roadmap analysis v3; 8 Feature Units; 0 unresolved blocking cycles
+Effect of approval: approved -> active is possible only after a valid approved Feature Unit exists
+```
+
+This wording distinguishes the approval decision from the later `approved ->
+active` state-machine gate and prevents an operator from assuming one click
+starts all work.
+
+### P-03.5 Feature Unit Decomposition Table
+
+At `1280px` and above, use a native table with this column contract:
+
+| Column | Content |
+|---|---|
+| Sequence | immutable `sequenceNumber`, not a draggable priority editor |
+| Feature Unit | title link and monospace key |
+| State | icon + localized text + evidence-backed reason when exceptional |
+| Risk | textual risk level, never color alone |
+| Dependencies | satisfied/required count and link to relation list |
+| Component Work | required/open/blocked/PR-created factual counts |
+| Human gate | pending count or `없음` |
+| Open | explicit detail link |
+
+The table is read-only. It does not use ARIA grid, in-cell editing, drag and
+drop, or bulk selection. Sort order is fixed to `sequenceNumber`; an operator
+may filter by state/risk/dependency condition, but cannot reorder the roadmap
+through the UI. Feature Unit state transitions happen only through their named
+commands and StateMachine.
+
+At `1024px` through `1279px`, Component Work counts collapse into a disclosed
+text summary under the Unit title. At less than `1024px`, render semantic cards
+instead of visually squeezing a table: sequence/state/risk on the first line,
+title link, dependency condition, then component/human-gate facts. Desktop and
+mobile render one semantic representation at a time; hidden table content is
+not duplicated for screen readers.
+
+### P-03.6 Dependency And Activity Rules
+
+The Roadmap dependency figure follows P-02's noninteractive SVG-plus-text
+contract. It depicts only `depends_on` edges. It has a short figure caption and
+an adjacent semantic relationship table built from `accessibleRows`; it never
+uses `tree`, `treegrid`, or a custom keyboard model. The relation table is
+always available, and is the only dependency representation below `768px`.
+
+Recent Planning Activity is a ten-item ordered list of immutable analysis,
+approval, relation, and Feature Unit planning events. It is not a general log.
+Each event links to its authorized evidence or subject where available. A
+missing evidence link is displayed as `근거 없음` only when the event type has
+no required Artifact; it must not fabricate an evidence reference.
+
+### P-03.7 Real-Time, State, And Failure Behavior
+
+The detail page subscribes to the Project stream after its first snapshot. It
+marks updates pending without moving rows or replacing the planning-gate panel
+under focus. The owner applies updates through a single `업데이트 적용` control,
+which refetches the complete detail projection atomically.
+
+| Condition | Required rendering |
+|---|---|
+| `draft` | source imported; analysis action/state explanation; no approval command |
+| `analyzed` | analysis evidence visible; state-machine explanation for review readiness |
+| `review_ready` | planning-gate panel and allowed human decision controls |
+| `approved` | approval record; explain that activation still needs approved Feature Unit evidence |
+| `active` | decomposition table and current execution links; no planning-edit controls |
+| `completed` / `archived` | read-only history/provenance; no approval action |
+| `blocked` / `incident_hold` | exceptional-state banner, proving event, and recovery/incident link; no local bypass |
+| source Artifact unavailable | show metadata and redaction/unavailability reason; do not display an empty document viewer |
+| relation truncation | omitted count and Feature Unit-detail route; never draw a partial graph as complete |
+| conflict after decision submit | preserve typed reason, display server reason/version, require refresh before retry |
+| stale/disconnected | retain snapshot with timestamp, disable only decision submission until REST refresh proves current version |
+| denied/not found | clear cached roadmap/source metadata and render non-discoverable result |
+
+### P-03.8 Planned Frontend Boundaries
+
+```text
+apps/control/app/(control)/projects/[projectKey]/roadmaps/page.tsx
+apps/control/app/(control)/projects/[projectKey]/roadmaps/[roadmapKey]/page.tsx
+apps/control/features/roadmaps/roadmap-list-route.tsx
+apps/control/features/roadmaps/roadmap-detail-route.tsx
+apps/control/features/roadmaps/roadmap-planning-gate.tsx
+apps/control/features/roadmaps/record-planning-decision-dialog.tsx
+apps/control/features/roadmaps/feature-unit-decomposition-table.tsx
+apps/control/features/roadmaps/feature-unit-decomposition-cards.tsx
+apps/control/features/roadmaps/roadmap-dependency-figure.tsx
+apps/control/features/roadmaps/roadmap-relation-table.tsx
+apps/control/features/roadmaps/recent-planning-activity.tsx
+packages/contracts/src/roadmaps/roadmap-list.contract.ts
+packages/contracts/src/roadmaps/roadmap-detail.contract.ts
+packages/contracts/src/roadmaps/roadmap-commands.contract.ts
+```
+
+The generated API client owns request serialization and typed error decoding.
+The decision dialog owns local form state only; it receives allowed actions and
+expected version from the server projection, passes an idempotency key with the
+command, and never decides eligibility itself.
+
+### P-03.9 Verification Contract
+
+1. OpenAPI/controller tests cover list cursor/filter validation, all detail
+`null` branches, command idempotency, reason requirements, and stale-version
+`409` responses.
+2. Application tests prove the Roadmap state-machine gates: source validity,
+analysis, human approval, and approved Feature Unit requirement for activation.
+3. Integration tests prove source provenance/hash redaction, dependency-cycle
+rejection, relation filtering, and bounded projection query count.
+4. UI tests prove table/card semantic switching, fixed sequence order, dialog
+focus/reason retention, `aria-live` update notice, and no state inference.
+5. Accessibility and visual checks cover source unavailable, review ready,
+approved but inactive, blocked, incident hold, 50-Unit truncation, and all
+global viewport matrix sizes.
+6. Human verification proves an owner can identify the exact missing gate,
+review its evidence, request changes with a reason, and understand that a
+Roadmap approval does not automatically start implementation.
+
+### P-03.10 Standards References
+
+- [WAI-ARIA Modal Dialog Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/): modal focus containment and return.
+- [WAI-ARIA Alert Dialog Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog/): high-consequence confirmation semantics.
+- [W3C Complex Images](https://www.w3.org/WAI/tutorials/images/complex/):
+  equivalent structured dependency information.
+- [WAI-ARIA Grid Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/grid/):
+  why the read-only Feature Unit list remains a native table.
