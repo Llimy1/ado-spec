@@ -390,3 +390,479 @@ Required evidence before a Project-list implementation can be accepted:
 - [WCAG 2.2 Focus Not Obscured](https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html): focus must remain perceivable.
 - [W3C ARIA status technique](https://www.w3.org/WAI/WCAG20/Techniques/aria/ARIA22): polite live announcement for result/update status.
 - [MDN Container Queries](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_container_queries): component-local layout adaptation.
+
+---
+
+## P-02: Project Overview
+
+### P-02.1 Identity And Boundaries
+
+| Property | Contract |
+|---|---|
+| Route | `/projects/{projectKey}` |
+| Permitted actor | authenticated `Human Owner` authorized for the Project |
+| Primary question | Is this Project advancing safely, what must the owner decide, and which exact work record proves that answer? |
+| Read authority | `GET /v1/projects/{projectKey}/overview`; Project SSE is freshness-only |
+| State-changing commands | none on the overview itself |
+| Non-goals | a generic KPI dashboard, direct pause/retry/cancel, Project configuration editing, raw logs, mutable checklist items, and a visual graph as the only source of dependency truth |
+
+The overview is a project-scoped decision surface. It is deliberately not a
+collection of decorative metrics. Every number, status, and alert links to the
+Feature Unit, Component Work, decision, incident, or event record that proves
+it. Operational actions belong to their specific detail page, where policy,
+evidence, version, and consequence can be shown together.
+
+### P-02.2 Overview Read Model
+
+The existing endpoint has this required response shape:
+
+```text
+GET /v1/projects/{projectKey}/overview
+```
+
+It accepts no free-text filter and returns one bounded, purpose-built
+`ProjectOverviewProjection`. It is not assembled in the browser from unrelated
+list endpoints. It returns `Cache-Control: private, no-store` and includes a
+server `observedAt` timestamp, `requestId`, and `resourceVersion`.
+
+```ts
+type AttentionSeverity = 'none' | 'warning' | 'critical'
+
+interface ProjectOverviewResponse {
+  project: {
+    projectKey: string
+    name: string
+    description: string | null
+    archived: boolean
+    timezone: string
+    repository: {
+      repositoryKey: string
+      remoteUrlRedacted: string
+      integrationBranch: string
+      defaultBranch: string
+    } | null
+    activeConstraintProfile: {
+      version: number
+      approvedAt: string
+    } | null
+  }
+  attention: {
+    severity: AttentionSeverity
+    operationalStatus:
+      | 'healthy'
+      | 'attention_required'
+      | 'blocked'
+      | 'incident_hold'
+      | 'archived'
+    reasons: Array<{
+      code: ProjectAttentionReason
+      count: number
+      href: string
+    }>
+    nextRequiredHumanAction: {
+      decisionKey: string
+      title: string
+      dueAt: string | null
+      href: string
+    } | null
+  }
+  roadmap: {
+    roadmapKey: string
+    title: string
+    state: string
+    requiredFeatureUnit: {
+      total: number
+      closed: number
+      active: number
+      blocked: number
+      awaitingHuman: number
+    }
+    href: string
+  } | null
+  focusFeatureUnit: {
+    featureUnitKey: string
+    title: string
+    state: string
+    reason: 'requires_human_action' | 'blocked' | 'active' | 'next_approved'
+    componentWork: {
+      total: number
+      running: number
+      blocked: number
+      needsRevision: number
+      readyForPr: number
+      prCreated: number
+    }
+    href: string
+  } | null
+  componentWork: {
+    items: Array<{
+      componentWorkKey: string
+      title: string
+      primaryComponent: { key: string; displayName: string }
+      executionScope: 'single' | 'coordinated'
+      state: string
+      attentionSeverity: AttentionSeverity
+      activeRun: { runKey: string; startedAt: string; href: string } | null
+      lastCommittedEventAt: string
+      href: string
+    }>
+    totalOpenCount: number
+    omittedCount: number
+  }
+  executionFocus: {
+    activeAttemptCount: number
+    primary: {
+      jobKey: string
+      attemptKey: string
+      agentRunKey: string | null
+      componentWorkKey: string
+      phase: string
+      runnerLabel: string
+      startedAt: string
+      timeoutAt: string
+      href: string
+    } | null
+    capacity: {
+      eligibleReadyWorkerCount: number
+      eligibleDegradedWorkerCount: number
+      queueDepthForProject: number
+      oldestQueuedAt: string | null
+    }
+  }
+  decisionQueue: {
+    items: Array<{
+      decisionKey: string
+      title: string
+      targetType: 'feature_unit' | 'component_work' | 'incident' | 'configuration'
+      requestedAt: string
+      dueAt: string | null
+      severity: AttentionSeverity
+      href: string
+    }>
+    totalPendingCount: number
+    omittedCount: number
+  }
+  recentActivity: {
+    items: Array<{
+      eventKey: string
+      occurredAt: string
+      actorLabel: string
+      kind: 'state_transition' | 'verification' | 'review' | 'decision' | 'incident' | 'pull_request'
+      summary: string
+      subject: { type: string; key: string; href: string }
+      evidenceHref: string | null
+    }>
+    omittedCount: number
+  }
+  dependencyMap: {
+    isTruncated: boolean
+    omittedNodeCount: number
+    nodes: Array<{
+      featureUnitKey: string
+      title: string
+      state: string
+      attentionSeverity: AttentionSeverity
+      href: string
+    }>
+    edges: Array<{
+      fromFeatureUnitKey: string
+      toFeatureUnitKey: string
+      relation: 'depends_on'
+    }>
+    accessibleRows: Array<{
+      featureUnitKey: string
+      dependsOn: string[]
+      blocks: string[]
+    }>
+  }
+  snapshot: {
+    observedAt: string
+    resourceVersion: string
+    requestId: string
+  }
+}
+```
+
+The endpoint returns at most 12 Component Work items, 3 pending decisions, 10
+recent activity entries, 24 dependency nodes, and 48 dependency edges. It
+sets `omittedCount` or `isTruncated` rather than silently hiding data. Deeper
+lists belong to dedicated detail routes. No raw artifact payload, command
+argument, local path, provider token, or unredacted runner log is included.
+
+### P-02.3 Deterministic Projection Rules
+
+The API computes each overview section in the application/read-model layer.
+The Control Room must not recreate these rules from child records.
+
+| Projection | Rule |
+|---|---|
+| Project operational status | the P-01 precedence contract, scoped to this Project |
+| Focus Feature Unit | first required Unit with pending human action; else first blocked required Unit; else oldest active Unit by `sequence_number`; else first approved Unit by `sequence_number`; else `null` |
+| Component Work items | open Work sorted by attention severity, then active-run presence, then latest committed event descending, then `componentWorkKey` |
+| Primary execution | oldest currently running JobAttempt; ties break by Job priority then attempt key |
+| Worker capacity | Workers eligible for this Project's queued/running job capabilities; it is not a global worker-pool health claim |
+| Recent activity | append-only AuditEvent/StateTransition projection ordered by `occurredAt desc`, then immutable event key |
+| Dependency graph | only unwaived required `depends_on` FeatureUnitRelation edges; `blocks` is presented in textual rows, not drawn as a second ambiguous arrow type |
+
+The overview query uses a bounded collection of SQL projections or materialized
+read models, executed under a single read service. A controller cannot invoke
+one repository per panel. The implementation records and tests a query budget
+for this endpoint; adding a panel must not introduce N+1 child reads.
+
+`focusFeatureUnit.reason` is rendered in Korean as an explanation, for example
+`사람의 승인 대기`, `차단된 작업`, `현재 실행 중`, or `다음 승인 단위`. It is
+not a mutable state label.
+
+### P-02.4 Page Layout And Information Priority
+
+At `1440px` and above, use the 12-column shell grid in this exact order:
+
+```text
+breadcrumb
+Project identity header and freshness
+attention band, only when severity is warning or critical
+row 1: focus Feature Unit (8 columns) | pending human decisions (4 columns)
+row 2: Component Work table (8 columns) | execution focus and capacity (4 columns)
+row 3: recent activity timeline (7 columns) | dependency map (5 columns)
+```
+
+The header shows Project name, archived marker when applicable, `projectKey`,
+redacted repository URL, integration branch, active constraint-profile version,
+and the last authoritative snapshot. Branch values are descriptive; no branch
+control is present. Long machine values follow the global copy-and-tooltip
+policy.
+
+The attention band is absent for `healthy`. For warning and critical states it
+appears before all summaries and contains: severity label, the highest-priority
+reason, count, a link to the proving record, and one next required human
+action when present. It is not dismissible until the underlying REST projection
+changes.
+
+The page never displays synthetic velocity, MTTR, success percentage, change
+failure rate, model quality score, or predicted completion time in v1. Those
+metrics require separately defined calculation windows and evidence rules; a
+plausible-looking number is less safe than an explicit absence.
+
+### P-02.5 Section Contracts
+
+#### Focus Feature Unit
+
+The focus card has a named link, current lifecycle state, selection reason,
+Component Work count summary, and direct link to the Feature Unit detail. It
+does not show a percent-complete bar because Feature Unit completion is a
+state/evidence-gated process, not a reliable arithmetic percentage. When no
+Feature Unit is selectable, render one of these API-provided reasons:
+
+```text
+no_approved_roadmap
+no_feature_units
+all_required_feature_units_closed
+project_archived
+```
+
+The card presents the matching roadmap/detail link only. It never offers a
+button to activate work directly.
+
+#### Pending Human Decisions
+
+This panel shows at most three decision rows. Each row contains title, target
+type, requested time, optional due time, severity, and a `검토하기` link. It
+contains no approve/reject controls; decisions require their dedicated context,
+evidence, and explicit reason record. A `전체 N건 보기` link preserves the
+Project filter in the Human Decision Inbox route.
+
+#### Component Work Table
+
+At wide desktop the semantic table has `Component`, `Work`, `Scope`, `State`,
+`Active run`, `Last committed activity`, and `Open` columns. `Scope` exposes
+`single` or `coordinated` with a localized label and a text description of
+declared component roots on the detail route. State uses icon, text, and
+attention severity. No row itself is clickable; the Work title and Open link
+are native anchors.
+
+The table is an overview sample, not the complete Work inventory. The footer
+displays `열린 작업 전체 N건 보기` when `omittedCount > 0`, with no implicit
+infinite scroll.
+
+#### Execution Focus
+
+The panel distinguishes exactly these facts:
+
+```text
+no active attempt
+-> queued work only
+-> active attempt running
+-> active attempt near timeout
+-> no eligible ready Worker
+```
+
+For a running attempt it renders Job/Attempt key, related Component Work,
+runner label, phase, start time, timeout time, and a link to Run Detail. A
+progress bar is prohibited unless the Job handler emits a defined bounded
+progress model. Elapsed time is not progress. A near-timeout condition begins
+when remaining time is less than 20 percent of the defined timeout and includes
+the exact deadline.
+
+#### Recent Activity
+
+Recent Activity is a static ordered list (`<ol>`), not a live `feed` and not a
+scrolling terminal. Each item contains a `<time>`, actor, concise event
+summary, subject link, and optional evidence link. The list's accessible text
+states the event type in addition to its color/icon. New SSE events do not
+prepend into the list while it is being read; they increment the page-level
+pending-update indicator.
+
+#### Dependency Map
+
+The map is a supplementary visualization of required `depends_on` edges, not
+an interactive `tree` or a source of action. It renders no clickable SVG nodes
+and has no custom arrow-key behavior. This avoids falsely declaring tree/grid
+semantics for a directed acyclic relation that users do not edit here.
+
+The implementation uses a bounded, deterministic layout: assign each node a
+layer equal to one plus the maximum layer of its prerequisites, stable-sort
+same-layer nodes by `sequence_number` then key, render SVG arrows behind
+noninteractive nodes, and recompute connector geometry using `ResizeObserver`.
+The visible figure has a short caption. Immediately adjacent to it is a native
+table/list representation built from `accessibleRows`; it is visible by default
+to assistive technology and available to sighted users through `의존성 목록
+보기`. At less than `768px`, the SVG is not rendered and the textual list is
+the sole representation. A truncated map states its omitted-node count and
+links to the Roadmap/Feature Unit view.
+
+### P-02.6 Real-Time And Staleness Behavior
+
+After the REST snapshot succeeds, the page opens
+`GET /v1/projects/{projectKey}/events`. It keeps a local `pendingUpdateCount`
+and `highestPendingSeverity`; the current overview stays spatially stable until
+the owner chooses `업데이트 적용`.
+
+```text
+state.transitioned / verification.completed / review.finding.created
+  -> increment pending count only
+
+human_decision.required / incident.updated
+  -> increment pending count; show persistent attention banner
+  -> announce concise non-sensitive status through the page live region
+
+job.attempt.updated
+  -> update only the explicit connection freshness indicator; do not animate
+     elapsed/progress or replace the execution card
+
+stream reconnect
+  -> mark all summary data stale
+  -> re-fetch overview REST snapshot
+  -> atomically replace all panels and clear pending count
+```
+
+If a Project becomes archived, the next authoritative snapshot changes the
+header and makes all overview links read-only navigation. If access is revoked,
+the next REST response returns the existing undiscoverable `404` behavior; the
+page clears in-memory Project data before rendering the permission state.
+
+### P-02.7 Responsive Contract
+
+| Range | Layout | Required adaptation |
+|---|---|---|
+| 1440px+ | 12-column wide layout | all sections shown as in P-02.4 |
+| 1280-1439px | 8-column desktop layout | focus/decisions and work/execution remain two columns; timeline/map become stacked if either panel reaches its min width |
+| 1024-1279px | 8-column content with sidebar | attention, focus, decisions, execution stack; Component Work becomes compact table; dependency map moves below activity |
+| 768-1023px | 6-column content with rail | all panels one column except compact attention counts; Component Work renders cards; only textual dependency list |
+| 320-767px | 4-column content with Drawer | header metadata becomes disclosure rows; decision list, focus card, execution card, work cards, activity, and dependency list are single column |
+
+No overview panel relies on viewport width alone for its internal reflow.
+Cards with an optional side metric declare `container-type: inline-size` and
+switch to stacked content when their own width falls below `420px`. The global
+shell controls navigation breakpoints; components control internal density.
+
+### P-02.8 Accessibility And Focus Rules
+
+- The route renders one `<main>` landmark and one `h1` containing Project name.
+  Client-side navigation moves focus to this heading after loading a new Project.
+- Each overview panel is a labelled `<section>` with a unique heading. The
+  attention band is the first focusable/announced region after the header when
+  critical; otherwise normal document order remains unchanged.
+- Tooltip-only machine-value expansion is supplementary. The copy button has a
+  visible accessible name such as `integration branch 복사`; tooltip content is
+  referenced with `aria-describedby` and never contains an action.
+- The mobile filter/dialog conventions from P-01 apply to every overview
+  dialog. No panel opens a modal solely to display information that could be a
+  route or disclosure.
+- The dependency figure follows the complex-image rule: short caption plus
+  equivalent structured description. The adjacent relationship list is not
+  hidden from assistive technology.
+- A connection update, background snapshot, or SSE message never moves DOM
+  focus. Only user-initiated navigation or a failed user command may change
+  focus.
+
+### P-02.9 State Matrix
+
+| Condition | Required result |
+|---|---|
+| initial loading | header and panel skeletons preserve final geometry; no fake values or live announcement |
+| healthy Project | no attention band; all fact panels render from snapshot |
+| warning / critical | attention band and proving links render before summary panels |
+| archived Project | archived marker, read-only context, no execution urgency claim |
+| no roadmap | roadmap-empty explanation, no Feature Unit/graph fabrication |
+| no focus Feature Unit | explicit API reason and roadmap link when permitted |
+| no active attempt | execution panel renders queue/capacity state, not an empty chart |
+| no eligible ready Worker | execution panel is warning/critical according to API severity and links to Worker context |
+| dependency truncation | visible count plus complete textual route; never silently remove nodes |
+| stale/disconnected | preserve snapshot, show observed time and connection state, disable only freshness-dependent affordances |
+| error with snapshot | retain last snapshot with stale marker and retry; do not clear identifying header until access is denied |
+| error without snapshot | route-level error with request ID and retry; no guessed Project name |
+| denied/not found | clear cached data, show non-discoverable access result, provide Projects navigation |
+
+### P-02.10 Planned Frontend Boundaries
+
+```text
+apps/control/app/(control)/projects/[projectKey]/page.tsx
+apps/control/features/project-overview/project-overview-route.tsx
+apps/control/features/project-overview/project-attention-band.tsx
+apps/control/features/project-overview/focus-feature-unit-card.tsx
+apps/control/features/project-overview/pending-decision-list.tsx
+apps/control/features/project-overview/component-work-summary-table.tsx
+apps/control/features/project-overview/execution-focus-panel.tsx
+apps/control/features/project-overview/recent-activity-timeline.tsx
+apps/control/features/project-overview/feature-dependency-figure.tsx
+apps/control/features/project-overview/feature-dependency-list.tsx
+apps/control/features/project-overview/project-overview-state.ts
+packages/contracts/src/projects/project-overview.contract.ts
+```
+
+The server route obtains the initial generated-client response. The route
+feature owns the Project SSE subscription, freshness reducer, and atomic
+snapshot replacement. Panel components receive typed slices only. The SVG
+dependency renderer receives already authorized nodes/edges and cannot fetch
+data, calculate state, or open an EventSource.
+
+### P-02.11 Verification Contract
+
+1. API/OpenAPI tests validate all bounded collection limits, redaction, and
+`null` cases in the Overview DTO.
+2. Projection tests prove focus-Feature-Unit priority, operational-status
+precedence, active-attempt selection, and dependency-edge filtering.
+3. Database integration tests prove a bounded query budget for Projects with
+12 Component Works, 3 decisions, 10 events, and 24 dependency nodes.
+4. UI tests prove no synthetic percentages/progress, correct empty variants,
+stable ordering during SSE updates, focus retention, and all proving links.
+5. Accessibility tests verify semantic sections, native table/list semantics,
+keyboard navigation, dependency text equivalence, tooltip behavior, and no
+obscured focus at every responsive range.
+6. Visual evidence covers healthy, blocked, decision-required, archived,
+worker-unavailable, dependency-truncated, stale, and error states at the
+global design-system viewport matrix.
+7. Human verification proves that the owner can answer the primary question
+without interpreting an undocumented metric or opening a raw log.
+
+### P-02.12 Standards References
+
+- [W3C Complex Images](https://www.w3.org/WAI/tutorials/images/complex/):
+  diagram/graph requires a concise description and equivalent long structured
+  representation.
+- [WAI-ARIA Tree View Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/treeview/):
+  do not use tree semantics without the required hierarchy and keyboard model.
+- [WAI-ARIA Tooltip Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/tooltip/):
+  tooltip trigger, focus, escape, and `aria-describedby` behavior.
+- [MDN Container Queries](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_container_queries):
+  component-local responsive adaptation.
