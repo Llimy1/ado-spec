@@ -139,6 +139,7 @@ GET /v1/verification-runs/{verificationRunId}
 GET /v1/review-groups/{reviewGroupId}
 GET /v1/pull-requests/{pullRequestId}
 GET /v1/incidents
+GET /v1/decisions
 GET /v1/projects/{projectKey}/incidents/{incidentKey}
 GET /v1/projects/{projectKey}/decisions
 GET /v1/projects/{projectKey}/decisions/{decisionKey}
