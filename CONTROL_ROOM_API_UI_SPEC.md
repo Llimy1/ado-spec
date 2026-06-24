@@ -110,6 +110,14 @@ data detection.
 ### 5.1 Read Endpoints
 
 Read endpoints are side-effect free and cursor-paginate unbounded collections.
+Keys are not assumed globally unique unless the database contract says they are.
+`project_key` is global; `roadmap_key` is unique within a Project;
+`feature_unit_key` is unique within a Roadmap; `component_work_key` is unique
+within a Feature Unit. Routes for those human-readable keys are therefore
+hierarchical. Resources that have no globally unique human key use their UUID
+with an `{resourceId}` parameter. A route never treats a locally unique key as
+a global identifier.
+
 Representative endpoint families are:
 
 ```text
@@ -119,17 +127,20 @@ GET /v1/projects/{projectKey}
 GET /v1/projects/{projectKey}/roadmaps
 GET /v1/projects/{projectKey}/overview
 GET /v1/projects/{projectKey}/roadmaps/{roadmapKey}
-GET /v1/feature-units/{featureUnitKey}
-GET /v1/component-works/{componentWorkKey}
-GET /v1/jobs/{jobKey}
-GET /v1/jobs/{jobKey}/attempts
-GET /v1/agent-runs/{agentRunKey}
-GET /v1/verification-runs/{verificationRunKey}
-GET /v1/review-groups/{reviewGroupKey}
-GET /v1/pull-requests/{pullRequestKey}
+GET /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units
+GET /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}
+GET /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}
+GET /v1/projects/{projectKey}/jobs/{jobKey}
+GET /v1/projects/{projectKey}/jobs/{jobKey}/attempts
+GET /v1/job-attempts/{jobAttemptId}
+GET /v1/agent-runs/{agentRunId}
+GET /v1/verification-runs/{verificationRunId}
+GET /v1/review-groups/{reviewGroupId}
+GET /v1/pull-requests/{pullRequestId}
 GET /v1/incidents
-GET /v1/artifacts/{artifactKey}
-GET /v1/logs?attemptKey={attemptKey}&cursor={cursor}
+GET /v1/projects/{projectKey}/incidents/{incidentKey}
+GET /v1/projects/{projectKey}/artifacts/{artifactKey}
+GET /v1/logs?attemptId={jobAttemptId}&cursor={cursor}
 GET /v1/health
 ```
 
@@ -145,17 +156,17 @@ Job or TransitionRequest reference; it never holds an HTTP connection until a
 runner finishes.
 
 ```text
-POST /v1/feature-units/{featureUnitKey}/commands/request-approval
-POST /v1/feature-units/{featureUnitKey}/commands/record-human-decision
-POST /v1/roadmaps/{roadmapKey}/commands/record-human-decision
-POST /v1/component-works/{componentWorkKey}/commands/pause
-POST /v1/component-works/{componentWorkKey}/commands/resume
-POST /v1/component-works/{componentWorkKey}/commands/retry
-POST /v1/component-works/{componentWorkKey}/commands/cancel
-POST /v1/component-works/{componentWorkKey}/commands/request-pr
-POST /v1/human-verification-items/{itemKey}/commands/record-result
-POST /v1/incidents/{incidentKey}/commands/acknowledge
-POST /v1/incidents/{incidentKey}/commands/request-recovery
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/commands/record-human-decision
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/commands/request-approval
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/commands/record-human-decision
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}/commands/pause
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}/commands/resume
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}/commands/retry
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}/commands/cancel
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}/commands/request-pr
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/human-verification-items/{itemKey}/commands/record-result
+POST /v1/projects/{projectKey}/incidents/{incidentKey}/commands/acknowledge
+POST /v1/projects/{projectKey}/incidents/{incidentKey}/commands/request-recovery
 ```
 
 The API never offers `POST /state`, bulk update, arbitrary retry, arbitrary

@@ -502,7 +502,7 @@ interface ProjectOverviewResponse {
       executionScope: 'single' | 'coordinated'
       state: string
       attentionSeverity: AttentionSeverity
-      activeRun: { runKey: string; startedAt: string; href: string } | null
+      activeRun: { jobAttemptId: string; startedAt: string; href: string } | null
       lastCommittedEventAt: string
       href: string
     }>
@@ -513,8 +513,8 @@ interface ProjectOverviewResponse {
     activeAttemptCount: number
     primary: {
       jobKey: string
-      attemptKey: string
-      agentRunKey: string | null
+      jobAttemptId: string
+      agentRunId: string | null
       componentWorkKey: string
       phase: string
       runnerLabel: string
@@ -1009,7 +1009,7 @@ command. It creates a typed TransitionRequest and never writes a Roadmap state
 directly.
 
 ```text
-POST /v1/roadmaps/{roadmapKey}/commands/record-human-decision
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/commands/record-human-decision
 ```
 
 Both require `Idempotency-Key`. The record-decision request body is:
