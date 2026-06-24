@@ -2109,3 +2109,215 @@ packages/contracts/src/human-verification/human-verification.contract.ts
 - [WAI-ARIA Alert Dialog Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog/): final consequential human decision.
 - [WAI-ARIA Modal Dialog Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/): result-recording dialog focus behavior.
 - [WAI-ARIA Table Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/table/): checklist evidence table semantics.
+
+---
+
+## P-09: Decision Inbox And Incidents
+
+### P-09.1 Decision Inbox
+
+The global `/decisions` view and Project-filtered
+`/projects/{projectKey}/decisions` view answer one question: what exact human
+decision is required before safe progress can continue? They read
+`GET /v1/projects/{projectKey}/decisions` with cursor, `status`, `targetType`,
+and `dueBefore` filters. Each row contains decision key/type, target link,
+requested actor/time, expiry or SLA, PolicyDecision/EvidenceGate summary,
+allowed decision choices, and immutable prior/superseding decision links.
+
+The detail route `/projects/{projectKey}/decisions/{decisionKey}` shows the
+full authorized evidence manifest and a typed decision form only when the API
+returns `allowedActions`. There is no generic approve/reject control. Planning,
+Feature Unit, verification, pause, recovery, and incident decisions use their
+own endpoint schemas defined by the owning page contract. This inbox routes to
+those contexts; it does not duplicate or bypass them.
+
+Desktop is a native table sorted by expired, critical, due time, requested time.
+Mobile is cards with target, required action, due time, and open link. New
+required decisions create a persistent count/`role=status` notice but never
+steal focus or auto-open a dialog. Expired, superseded, resolved, denied, stale,
+and empty states have separate text and links to evidence.
+
+### P-09.2 Incidents
+
+`/incidents` is a global operational list; detail is
+`/projects/{projectKey}/incidents/{incidentKey}`. An Incident is not an error
+toast. The detail projection includes severity, state, opened SafetyEvent,
+affected Feature Units/Works/Jobs, active PauseRecords, sanitized summary
+Artifact, recovery evidence, decisions, timeline, and returned
+`allowedActions: acknowledge | request_recovery`.
+
+Only the existing nested incident commands may be used, with idempotency key,
+expected resource version, and required 10-2,000 character reason. Acknowledge
+records human awareness; it does not resume automation. Request recovery opens
+an alertdialog that lists paused scope and recovery evidence requirements; the
+server decides whether recovery is allowed. Neither command can close an
+incident, clear a SafetyEvent, resume a Worker, or reclassify severity directly.
+
+The list uses a native table at desktop and cards below `1024px`; severity is
+text/icon/color. Detail places incident state and scope first, recovery evidence
+second, then an immutable timeline. SSE `incident.updated` is high priority:
+it shows a persistent banner and pending-update affordance, but still refetches
+REST before replacing displayed evidence. Tests prove incident creation pauses
+related automation, commands cannot bypass policy, redacted summaries stay
+redacted, focus is contained in recovery confirmation, and global/project
+addressing never leaks cross-Project incident data.
+
+### P-09.3 Planned Boundaries
+
+```text
+apps/control/app/(control)/decisions/page.tsx
+apps/control/app/(control)/projects/[projectKey]/decisions/page.tsx
+apps/control/app/(control)/projects/[projectKey]/decisions/[decisionKey]/page.tsx
+apps/control/app/(control)/incidents/page.tsx
+apps/control/app/(control)/projects/[projectKey]/incidents/[incidentKey]/page.tsx
+apps/control/features/decisions/decision-inbox.tsx
+apps/control/features/incidents/incident-list.tsx
+apps/control/features/incidents/incident-detail.tsx
+apps/control/features/incidents/incident-command-dialog.tsx
+packages/contracts/src/decisions/decision.contract.ts
+packages/contracts/src/incidents/incident.contract.ts
+```
+
+---
+
+## P-10: Artifacts, System Health, And Settings
+
+### P-10.1 Artifact Detail
+
+Artifact detail is nested at `/projects/{projectKey}/artifacts/{artifactKey}`
+and reads the existing nested endpoint. It answers: what is this immutable
+payload, where did it come from, can it be used as evidence, and is its
+redaction/classification safe to view? The response includes type/class,
+status, SHA, MIME/size, source version/context hash, Spec revision/manifest
+when applicable, redaction/classification, retention, provenance edges, and an
+authorized rendered/download link.
+
+The browser never guesses renderability. It renders only server-authorized
+representations: sanitized text, controlled document render, image preview, or
+metadata-only unavailable state. `quarantined`, `expired`, `deleted`, failed
+redaction, and restricted artifacts are never locally cached or previewed from
+a stale URL. Provenance is a native list/table, not a graph-only feature. Copy
+controls exist for hashes/keys; raw storage locators do not.
+
+### P-10.2 System Health
+
+`/system` reads `/v1/health` plus authorized Worker/queue projection. It is a
+read-only operational health surface: API readiness, DB connectivity summary,
+outbox lag/count, Worker registration states, active lease count, and incident
+count. It does not expose hostnames, PIDs, credentials, topology, stack traces,
+or an arbitrary restart command. Worker state semantics are exactly those in
+`WORKER_OPERATIONS.md`; UI does not manufacture an overall green status from a
+single responsive HTTP endpoint.
+
+Health cards are factual counts with links to affected records. A stale Worker
+is a visible degraded condition, not a transient animation. At mobile, cards
+become a list; detailed Worker tables become cards. SSE only invalidates the
+snapshot and shows `새 운영 업데이트`; it never changes a focused recovery link.
+
+### P-10.3 Settings
+
+`/settings` is an inspection and navigation surface in v1. It displays current
+ADO Spec revision/manifest, API/UI version, session identity, public repository
+policy, branch policy, active ProjectConstraintProfile metadata, and links to
+approved configuration decisions. It has no secret inputs, provider token
+forms, billing credentials, arbitrary env editor, direct DB editor, or branch
+protection writer. Configuration mutation is a separately approved future use
+case with its own Policy/Decision contract.
+
+Settings uses labelled definition lists rather than editable inputs for values
+that are intentionally read-only. Any future mutation control must state scope,
+expected version, reversible/irreversible effect, policy decision, audit event,
+and human approval requirement before it is added.
+
+### P-10.4 Verification And Files
+
+Tests prove no raw Artifact/storage data leaks, quarantined content cannot
+render, health responses omit secrets/topology, no System/Settings UI exposes a
+mutation without an API contract, responsive cards retain meaning, and keyboard
+focus remains stable during SSE refresh.
+
+```text
+apps/control/app/(control)/projects/[projectKey]/artifacts/[artifactKey]/page.tsx
+apps/control/app/(control)/system/page.tsx
+apps/control/app/(control)/settings/page.tsx
+apps/control/features/artifacts/artifact-detail.tsx
+apps/control/features/system/system-health.tsx
+apps/control/features/settings/settings-inspection.tsx
+packages/contracts/src/artifacts/artifact.contract.ts
+packages/contracts/src/system/system-health.contract.ts
+```
+
+---
+
+## P-11: Route Registry, Delivery Order, And Cross-Page QA
+
+### P-11.1 Canonical Route Registry
+
+```text
+/projects
+/projects/{projectKey}
+/projects/{projectKey}/roadmaps
+/projects/{projectKey}/roadmaps/{roadmapKey}
+/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}
+/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}
+/runs/{jobAttemptId}
+/verification-runs/{verificationRunId}
+/reviews/{reviewGroupId}
+/pull-requests/{pullRequestId}
+/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/human-verification
+/decisions
+/projects/{projectKey}/decisions
+/projects/{projectKey}/decisions/{decisionKey}
+/incidents
+/projects/{projectKey}/incidents/{incidentKey}
+/projects/{projectKey}/artifacts/{artifactKey}
+/system
+/settings
+```
+
+All routes use the address-scoping rules in `CONTROL_ROOM_API_UI_SPEC.md`.
+Route parameters are decoded, schema-validated, and never interpolated into a
+database query or filesystem path. A `404` for an unauthorized scoped resource
+does not reveal whether the resource exists.
+
+### P-11.2 Delivery Sequence
+
+| Delivery slice | Required UI | Required backend proof |
+|---|---|---|
+| A1 Foundation | shell, authenticated session, `/system`, loading/error/denied primitives | `/v1/health`, no browser DB/secret access, OpenAPI generation |
+| A2 Project read path | P-01 and P-02 read-only snapshots | project/overview projections, global and project SSE after commit |
+| A3 Planning path | P-03 and P-04 plus planning decisions | nested address enforcement, revision-safe human decisions, dependency gates |
+| A4 Execution path | P-05 and P-06 | worktree/branch policy, command idempotency, redacted cursor logs |
+| A5 Evidence delivery | P-07 and P-08 | verification/review/PR/human-check gates, no merge endpoint |
+| A6 Operations | P-09 and P-10 | incident/pause/recovery policy, artifact redaction, settings inspection |
+
+Later slices may not display controls whose backend command, policy, evidence,
+audit, and error semantics do not exist yet. A polished disabled mock is not a
+substitute for an absent safe capability.
+
+### P-11.3 Mandatory Cross-Page Rules
+
+1. REST snapshots are authoritative; SSE is committed freshness only.
+2. Every state label has a proving record link or authorized reason why none
+   exists; no client-created success/eligibility state.
+3. Every state-changing action has server-returned eligibility, idempotency,
+   expected version, policy/evidence result, audit event, `202/409/422` UX,
+   and focus-safe dialog/error behavior.
+4. No browser screen accesses DB, secrets, raw provider payload, raw artifact
+   storage, local worktree paths, arbitrary shell, merge, deploy, or production
+   data operations.
+5. Desktop table and mobile card variants are semantic alternatives; hidden
+   duplicate content is not announced twice.
+6. All core routes pass the viewport matrix, keyboard path, reduced motion,
+   contrast, long-value, stale/disconnected, empty, denied, and error cases.
+7. Screenshot comparison validates selected visual direction, but functional
+   DOM/accessibility/API tests remain independent acceptance evidence.
+
+### P-11.4 Completion Evidence Matrix
+
+Before any slice is marked complete, CI must retain: generated OpenAPI and
+contract drift result; controller/application/integration tests; migration
+evidence when models change; browser UI tests for all command/status paths;
+accessibility scan plus keyboard scenario results; desktop/mobile visual
+captures of required states; and a human checklist result. A passing screenshot
+alone, Agent completion text, or an unlinked log is never sufficient evidence.

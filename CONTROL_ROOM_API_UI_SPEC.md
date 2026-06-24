@@ -140,6 +140,8 @@ GET /v1/review-groups/{reviewGroupId}
 GET /v1/pull-requests/{pullRequestId}
 GET /v1/incidents
 GET /v1/projects/{projectKey}/incidents/{incidentKey}
+GET /v1/projects/{projectKey}/decisions
+GET /v1/projects/{projectKey}/decisions/{decisionKey}
 GET /v1/projects/{projectKey}/artifacts/{artifactKey}
 GET /v1/logs?attemptId={jobAttemptId}&cursor={cursor}
 GET /v1/health
