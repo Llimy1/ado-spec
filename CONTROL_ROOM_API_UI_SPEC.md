@@ -114,6 +114,7 @@ Representative endpoint families are:
 
 ```text
 GET /v1/projects
+GET /v1/events
 GET /v1/projects/{projectKey}
 GET /v1/projects/{projectKey}/overview
 GET /v1/projects/{projectKey}/roadmaps/{roadmapKey}
@@ -192,18 +193,36 @@ handwritten request/response interfaces.
 
 ## 7. SSE Contract
 
-The API exposes one authenticated, project-scoped stream:
+The API exposes two authenticated, read-only streams:
 
 ```text
+GET /v1/events
 GET /v1/projects/{projectKey}/events
 ```
+
+`GET /v1/events` is the Human Owner's global Control Room stream. It exists so
+the Projects list and the Human Decision Inbox can receive attention-level
+freshness signals across Projects. It emits only these summary event types:
+
+```text
+project.attention.changed
+project.archived.changed
+human_decision.required
+incident.updated
+```
+
+It never contains log content, artifact content, provider payloads, command
+arguments, or per-run output. `GET /v1/projects/{projectKey}/events` remains
+the detailed stream for one authorized Project and may emit the broader event
+set defined below. Both streams are hints; their associated REST snapshots are
+authoritative.
 
 The event envelope is transport-safe and contains no secret or raw payload:
 
 ```json
 {
   "id": "evt_...",
-  "type": "state.transitioned",
+  "type": "project.attention.changed",
   "occurredAt": "2026-06-22T12:00:00Z",
   "projectKey": "ado",
   "traceId": "trc_...",
@@ -217,6 +236,8 @@ Allowed event types are:
 
 ```text
 state.transitioned
+project.attention.changed
+project.archived.changed
 job.attempt.updated
 worker.updated
 log.available
