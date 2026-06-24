@@ -129,6 +129,7 @@ GET /v1/projects/{projectKey}/overview
 GET /v1/projects/{projectKey}/roadmaps/{roadmapKey}
 GET /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units
 GET /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}
+GET /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/human-verification
 GET /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}
 GET /v1/projects/{projectKey}/jobs/{jobKey}
 GET /v1/projects/{projectKey}/jobs/{jobKey}/attempts
@@ -158,6 +159,7 @@ runner finishes.
 ```text
 POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/commands/record-human-decision
 POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/commands/record-human-decision
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/commands/record-human-verification-decision
 POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}/commands/pause
 POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}/commands/resume
 POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}/commands/retry

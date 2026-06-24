@@ -98,6 +98,17 @@ Required:
 The previous review packet remains audit evidence only. It is not valid
 approval evidence for the new revision.
 
+### human_verification_changes_requested
+
+Required:
+
+- HumanDecision `human_verification_changes_requested` with non-empty reason
+- failed required HumanVerificationResult or linked revision request
+- visible PullRequest evidence for the affected Feature Unit
+
+The failed verification result is immutable evidence and cannot be replaced or
+silently cleared by a later result.
+
 ### feature_unit_active
 
 Required:

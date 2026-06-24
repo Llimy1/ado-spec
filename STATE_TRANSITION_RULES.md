@@ -80,6 +80,7 @@ Allowed exception transitions:
 * -> cancelled
 * -> incident_hold
 ready_for_human_review -> draft
+human_verification_pending -> needs_revision
 needs_revision -> active
 incident_hold -> previous_state
 ```
@@ -91,6 +92,10 @@ Key rules:
   `feature_unit_changes_requested`, a non-empty reason, and creation of a new
   FeatureUnitSpec revision. The prior review packet remains immutable audit
   evidence and cannot be reused as approval evidence for the new revision.
+- `human_verification_pending -> needs_revision` requires a HumanDecision
+  `human_verification_changes_requested`, a non-empty reason, and at least one
+  failed required HumanVerificationResult or an explicitly linked revision
+  request. The failed result remains append-only evidence.
 - `active` requires all blocking dependencies satisfied or explicitly waived.
 - `implementation_done` requires all required ComponentWorks implementation_done or later.
 - `ready_for_pr` requires all required ComponentWorks ready_for_pr or pr_created.

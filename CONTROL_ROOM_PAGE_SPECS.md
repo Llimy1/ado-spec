@@ -1973,3 +1973,139 @@ packages/contracts/src/reviews/review-group.contract.ts
 
 - [WAI-ARIA Table Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/table/): static evidence tables retain native semantics.
 - [W3C ARIA status technique](https://www.w3.org/WAI/WCAG20/Techniques/aria/ARIA22): noninterrupting committed-update notices.
+
+---
+
+## P-08: Pull Request And Human Verification
+
+### P-08.1 Boundaries
+
+| Surface | Route | Primary question |
+|---|---|---|
+| Pull Request detail | `/pull-requests/{pullRequestId}` | Was this PR created from the correct Work, branch, and evidence, and is it ready for a human to inspect? |
+| Human verification | `/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/human-verification` | Has the human performed the required Feature Unit checks and recorded durable evidence before closure? |
+
+ADO creates PRs with base branch `integrate`; it never renders a merge command,
+merge-ready status, GitHub review approval, or deployment as an ADO action.
+Human verification is Feature Unit scoped because cross-component functionality
+cannot be proven by a single Component Work PR.
+
+### P-08.2 PR Detail Contract
+
+`GET /v1/pull-requests/{pullRequestId}` returns the UUID-addressed PR,
+Component Work route, provider/external number/url, base/head branch, created
+and last-synced time, PR status projection, PullRequestPacket Artifact,
+effective Spec revision/hash, latest GitSnapshot, verification/review gate
+summaries, and redacted changed-path summary. It verifies base branch is
+`integrate`; any other base produces a policy/error panel rather than a normal
+PR view.
+
+The screen order is identity and external GitHub link; immutable branch/snapshot
+binding; readiness evidence; changed-path summary; linked verification/review;
+and sync timeline. Changed paths are summaries/authorized links, not an inline
+unbounded diff viewer. The external URL opens GitHub in a new tab with a clear
+label. Browser rendering never attempts to reproduce GitHub merge controls.
+
+### P-08.3 Human Verification Read And Command Contract
+
+```text
+GET /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/human-verification
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/human-verification-items/{itemKey}/commands/record-result
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/commands/record-human-verification-decision
+```
+
+The read projection contains Feature Unit state/gate, all required PR links,
+checklist item key/title/instructions/required flag/current latest append-only
+result/evidence link, and final decision eligibility. It does not return test
+credentials, private data, or an editable checklist template.
+
+```ts
+interface RecordHumanVerificationItemRequest {
+  result: 'passed' | 'failed' | 'skipped'
+  expectedFeatureUnitVersion: string
+  reason?: string
+  evidenceArtifactKey?: string
+}
+
+interface RecordHumanVerificationDecisionRequest {
+  decision: 'human_verified' | 'changes_requested'
+  expectedFeatureUnitVersion: string
+  reason?: string
+}
+```
+
+`failed`, `skipped`, and final `changes_requested` require a 10 to 2,000
+character reason. `skipped` additionally requires a policy-permitted explicit
+HumanDecision. `human_verified` is enabled only when the API reports all
+required items passed or validly skipped, all required PR evidence is visible,
+and no current incident/pause blocks closure. A result appends evidence; it
+never edits a prior result in place. The final decision is not enabled based on
+client checkbox counts.
+
+### P-08.4 Layout And Interaction
+
+PR detail uses fact panels and native evidence tables. Human verification uses:
+
+```text
+Feature Unit and PR evidence header
+gate explanation / final-decision eligibility
+required checklist table
+optional checklist disclosure
+final human decision panel
+append-only verification-result timeline
+```
+
+Each required checklist row shows instruction, current result, evidence, last
+recorded time, and `결과 기록` button only when API authorizes it. Recording
+opens a labelled dialog with result radios, reason field that appears/validates
+when required, optional evidence Artifact selector limited to authorized same
+Project artifacts, and clear statement that the result is append-only. Final
+verification uses an alertdialog, initially focused on `취소`, with the exact
+required-item counts and PR links visible before confirmation.
+
+At desktop checklist is a native table; below `1024px` it becomes labelled
+cards; below `768px` each record action is full-width but the final destructive
+or consequential decision remains separate below all evidence. SSE creates a
+pending update marker only. It never changes a selected radio, typed reason,
+or checklist row during a dialog.
+
+### P-08.5 States And Verification
+
+| Condition | Required rendering |
+|---|---|
+| PR absent | clear evidence that Work is not yet PR-created; no fake external link |
+| PR created, human verification unavailable | PR facts plus Feature Unit state explaining why checklist is not open |
+| pending checklist | required/optional separation, current item evidence, final action disabled with reason |
+| failed item | failure reason/evidence, Component Work and revision context link |
+| skipped item | explicit skip reason and HumanDecision evidence |
+| all items eligible | final human decision panel enabled by server projection only |
+| human verified | immutable result summary; merge remains external/human |
+| changes requested | reason and routed revision context; no silent reopen |
+| stale/conflict | preserve entered form, require REST refresh for versioned resubmit |
+
+Tests cover nested addressing, append-only result history, reason/skip policy,
+final-gate enforcement, no merge endpoint/UI, dialog focus, mobile cards,
+SSE form stability, and denial/redaction. Human acceptance proves the owner can
+open every required PR, execute each checklist instruction, attach permitted
+evidence, and record a final result without mistaking it for a Git merge.
+
+### P-08.6 Planned Frontend Boundaries
+
+```text
+apps/control/app/(control)/pull-requests/[pullRequestId]/page.tsx
+apps/control/app/(control)/projects/[projectKey]/roadmaps/[roadmapKey]/feature-units/[featureUnitKey]/human-verification/page.tsx
+apps/control/features/pull-requests/pull-request-detail.tsx
+apps/control/features/human-verification/human-verification-route.tsx
+apps/control/features/human-verification/checklist-table.tsx
+apps/control/features/human-verification/checklist-cards.tsx
+apps/control/features/human-verification/record-item-result-dialog.tsx
+apps/control/features/human-verification/final-verification-dialog.tsx
+packages/contracts/src/pull-requests/pull-request.contract.ts
+packages/contracts/src/human-verification/human-verification.contract.ts
+```
+
+### P-08.7 Standards References
+
+- [WAI-ARIA Alert Dialog Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog/): final consequential human decision.
+- [WAI-ARIA Modal Dialog Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/): result-recording dialog focus behavior.
+- [WAI-ARIA Table Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/table/): checklist evidence table semantics.
