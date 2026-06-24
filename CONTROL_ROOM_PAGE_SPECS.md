@@ -1745,3 +1745,137 @@ packages/contracts/src/component-work/component-work-commands.contract.ts
 - [WAI-ARIA Alert Dialog Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog/): destructive cancel confirmation.
 - [WAI-ARIA Modal Dialog Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/): focus containment and return.
 - [WAI-ARIA Grid Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/grid/): attempts remain native data tables, not composite grids.
+
+---
+
+## P-06: Run Detail And Logs
+
+### P-06.1 Identity And Read Boundary
+
+| Property | Contract |
+|---|---|
+| Route | `/runs/{jobAttemptId}` where `jobAttemptId` is a global UUID |
+| Primary question | What immutable attempt ran, under which authorized context, what happened, and what evidence proves its terminal or current state? |
+| Read authority | `GET /v1/job-attempts/{jobAttemptId}` plus cursor-paginated `GET /v1/logs?attemptId={jobAttemptId}` |
+| Commands | none; retry/pause/cancel live only on Component Work detail |
+| Non-goals | terminal emulation, command input, provider prompt editing, log export by default, raw payload rendering, automatic tail-follow, or reinterpretation of an exit code as Component Work success |
+
+The JobAttempt is immutable execution history. A retry creates another attempt;
+it never mutates this page's attempt. The page can link to the logical Job and
+Component Work, but it does not infer that a succeeded AgentRun means the
+Feature Unit or Component Work is complete.
+
+### P-06.2 DTO And Pagination Contract
+
+```ts
+interface JobAttemptDetailResponse {
+  attempt: {
+    jobAttemptId: string
+    attemptNumber: number
+    state: 'leased' | 'running' | 'succeeded' | 'failed' | 'timed_out' | 'cancelled' | 'policy_denied' | 'blocked' | 'human_required'
+    job: { jobKey: string; type: string; targetHref: string }
+    worker: { workerKey: string; version: string; href: string | null } | null
+    lease: { leasedAt: string | null; expiresAt: string | null; lastHeartbeatAt: string | null }
+    timing: { startedAt: string | null; finishedAt: string | null; timeoutAt: string | null; durationMs: number | null }
+    terminal: { exitCode: number | null; signal: string | null; failureCode: string | null; redactedSummary: string | null }
+    resultArtifactHref: string | null
+    replacementAttemptHref: string | null
+    resourceVersion: string
+  }
+  agentRuns: Array<{ agentRunId: string; role: string; provider: string; modelIdentifier: string; state: string; startedAt: string; finishedAt: string | null; outputArtifactHref: string | null; href: string }>
+  commandRuns: Array<{ commandRunId: string; commandKey: string; state: string; startedAt: string; finishedAt: string | null; exitCode: number | null; timedOut: boolean; stdoutAvailable: boolean; stderrAvailable: boolean; href: string }>
+  artifacts: Array<{ artifactKey: string; type: string; status: string; redactionStatus: string; byteSize: number; href: string | null }>
+  snapshot: { observedAt: string; requestId: string; resourceVersion: string }
+}
+
+interface AttemptLogPageResponse {
+  attemptId: string
+  stream: 'stdout' | 'stderr' | 'system'
+  entries: Array<{ sequence: number; occurredAt: string; level: 'info' | 'warn' | 'error'; text: string }>
+  nextCursor: string | null
+  newestSequence: number
+  redaction: { applied: boolean; omittedEntryCount: number; reasonCode: string | null }
+}
+```
+
+Log entries are sanitized server-side and returned as plain text. The UI inserts
+them with text nodes, never `dangerouslySetInnerHTML` or rendered ANSI/HTML.
+Each request limits entries to 500 and total returned text to 1 MiB; an opaque
+cursor is the only pagination mechanism. `stdout`, `stderr`, and `system` are
+separate server streams so one cannot be mistaken for another.
+
+### P-06.3 Layout And Log Interaction
+
+At wide desktop the route has: identity/terminal summary; timing and worker
+facts; AgentRun and CommandRun tables; redacted Artifact list; then a log
+reader. The terminal summary uses explicit text such as `timed_out`, exit code,
+signal, failure code, and result Artifact link. It never labels a nonzero exit
+as a vague red success/failure pill.
+
+The log reader uses URL state `?stream=stdout|stderr|system&cursor=...` and
+shows one stream at a time. It is a manual-activation tab interface only after
+all three first pages are preloaded; otherwise use ordinary links to preserve
+predictable latency. The raw output region is a labelled `<pre>` inside a
+bounded scroll container, preserves whitespace, wraps only when the owner
+explicitly enables `줄 바꿈`, and offers copy-visible-text only. It is not an
+ARIA live log region because continuous token output would overwhelm assistive
+technology.
+
+```text
+SSE log.available
+-> record highest newestSequence only
+-> show "새 출력 있음" through role=status
+-> do not append or scroll
+-> owner selects "새 출력 가져오기"
+-> request after current newest cursor; preserve scroll position
+```
+
+When the user is at the visual bottom and explicitly selects new output, the
+reader may scroll to the first new entry, never to the absolute bottom. When
+not at bottom, it retains viewport and displays an anchored new-output marker.
+Long unbroken values use local horizontal scroll; the page does not horizontal
+scroll. Redacted/omitted entries show count and reason, not placeholder text
+pretending the original output exists.
+
+### P-06.4 States, Focus, And Verification
+
+| Condition | Required presentation |
+|---|---|
+| leased/running | current lease, heartbeat freshness, timeout deadline, and no completion claim |
+| succeeded | attempt result only; link to verification/review evidence before any readiness conclusion |
+| failed/timed out | failure code, redacted summary, replacement attempt if any, Component Work link for permitted recovery |
+| policy denied/blocked/human required | policy reason/evidence link when authorized; no retry control here |
+| no AgentRun | explicit `AgentRun 없음`; never fabricate model/provider data |
+| no log page | neutral empty output state by stream |
+| redacted output | redaction fact/count/reason; no client-side reveal affordance |
+| stale/disconnected | retained snapshot and non-live marker; reconnect requires REST refetch |
+| attempt unavailable | clear cached data and show non-discoverable result |
+
+The `h1` names the JobAttempt and state. Tables are native tables. Stream
+links/buttons retain normal Tab order. New-output status uses `role=status`
+and does not steal focus. Artifact links describe type and redaction status.
+Verification requires controller tests for cursor bounds/redaction, integration
+tests proving no raw content reaches SSE, UI tests for no auto-scroll and
+scroll preservation, security tests for text-only insertion, and visual checks
+for running, timeout, redacted stderr, empty stream, and long-line overflow.
+
+### P-06.5 Planned Frontend Boundaries
+
+```text
+apps/control/app/(control)/runs/[jobAttemptId]/page.tsx
+apps/control/features/runs/job-attempt-detail-route.tsx
+apps/control/features/runs/attempt-summary.tsx
+apps/control/features/runs/agent-run-table.tsx
+apps/control/features/runs/command-run-table.tsx
+apps/control/features/runs/redacted-artifact-list.tsx
+apps/control/features/runs/attempt-log-reader.tsx
+apps/control/features/runs/attempt-log-state.ts
+packages/contracts/src/runs/job-attempt-detail.contract.ts
+packages/contracts/src/runs/attempt-log.contract.ts
+```
+
+### P-06.6 Standards References
+
+- [WAI-ARIA Tabs Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/tabs/): manual activation when panel load latency is material.
+- [WAI-ARIA Table Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/table/): native tables for static run facts.
+- [W3C ARIA status technique](https://www.w3.org/WAI/WCAG20/Techniques/aria/ARIA22): noninterrupting new-output notices.
