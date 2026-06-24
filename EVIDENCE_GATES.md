@@ -87,6 +87,17 @@ Required:
 - required components known
 - dependencies recorded
 
+### feature_unit_changes_requested
+
+Required:
+
+- HumanDecision `feature_unit_changes_requested` with non-empty reason
+- current FeatureUnitSpec and HumanPlanningReviewPacket references
+- creation request for a new FeatureUnitSpec revision
+
+The previous review packet remains audit evidence only. It is not valid
+approval evidence for the new revision.
+
 ### feature_unit_active
 
 Required:

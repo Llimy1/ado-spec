@@ -79,6 +79,7 @@ Allowed exception transitions:
 * -> blocked
 * -> cancelled
 * -> incident_hold
+ready_for_human_review -> draft
 needs_revision -> active
 incident_hold -> previous_state
 ```
@@ -86,6 +87,10 @@ incident_hold -> previous_state
 Key rules:
 
 - `approved` requires HumanDecision.
+- `ready_for_human_review -> draft` requires a HumanDecision
+  `feature_unit_changes_requested`, a non-empty reason, and creation of a new
+  FeatureUnitSpec revision. The prior review packet remains immutable audit
+  evidence and cannot be reused as approval evidence for the new revision.
 - `active` requires all blocking dependencies satisfied or explicitly waived.
 - `implementation_done` requires all required ComponentWorks implementation_done or later.
 - `ready_for_pr` requires all required ComponentWorks ready_for_pr or pr_created.

@@ -1189,3 +1189,321 @@ Roadmap approval does not automatically start implementation.
   equivalent structured dependency information.
 - [WAI-ARIA Grid Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/grid/):
   why the read-only Feature Unit list remains a native table.
+
+---
+
+## P-04: Feature Unit
+
+### P-04.1 Identity And Purpose
+
+| Property | Contract |
+|---|---|
+| Route | `/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}` |
+| Read authority | matching nested `GET /v1/.../feature-units/{featureUnitKey}` endpoint |
+| Primary question | Does this functional goal have approved scope, satisfied dependencies, complete Component Work evidence, and a clear next gate? |
+| State-changing action | record a permitted human planning approval or change request |
+| Non-goals | editing scope in place, starting implementation manually, direct Component Work commands, mutable acceptance criteria, PR merge, or treating checkboxes as state transitions |
+
+A Feature Unit is the functional and human-verification unit. It is not a
+Project phase, a branch, or a single Component Work. One Unit can require
+server, web, mobile, design, and contract work. It reaches `ready_for_pr` only
+when all required Component Works meet their independent gates.
+
+### P-04.2 Read Model And API Shape
+
+```text
+GET /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}
+```
+
+The endpoint returns one bounded `FeatureUnitDetailProjection` with
+`Cache-Control: private, no-store`. The API, not the browser, joins Feature
+Unit, dependencies, Component Work, evidence, review, PR, and decision state.
+
+```ts
+interface FeatureUnitDetailResponse {
+  featureUnit: {
+    featureUnitKey: string
+    sequenceNumber: number
+    title: string
+    intent: string
+    state: string
+    riskLevel: 'low' | 'normal' | 'high' | 'security_sensitive' | 'production_data_related'
+    constraintProfile: { version: number; contentSha256: string; href: string }
+    spec: {
+      artifactKey: string
+      revision: number
+      contentSha256: string
+      status: 'draft' | 'valid' | 'superseded' | 'rejected'
+      href: string | null
+    }
+    resourceVersion: string
+  }
+  planningGate: {
+    state: 'not_ready' | 'human_decision_required' | 'approved' | 'changes_requested' | 'blocked'
+    explanationCode: string
+    allowedActions: Array<'record_human_decision'>
+    expectedResourceVersion: string
+  }
+  activationGate: {
+    state: 'not_approved' | 'waiting_for_dependencies' | 'eligible' | 'active' | 'blocked'
+    unmetDependencyCount: number
+    waivedDependencyCount: number
+    pauseOrIncidentBlocking: boolean
+    explanationCode: string
+  }
+  acceptanceCriteria: {
+    items: Array<{
+      criterionKey: string
+      description: string
+      verificationMode: 'command' | 'artifact_review' | 'human_check' | 'mixed'
+      required: boolean
+      status: string
+      evidenceHref: string | null
+    }>
+    totalCount: number
+    requiredCount: number
+  }
+  dependencies: {
+    prerequisites: Array<{
+      featureUnitKey: string
+      title: string
+      relation: 'depends_on' | 'blocks'
+      satisfied: boolean
+      waivedByDecisionHref: string | null
+      href: string
+    }>
+    dependents: Array<{
+      featureUnitKey: string
+      title: string
+      relation: 'depends_on' | 'blocks'
+      href: string
+    }>
+  }
+  componentWork: {
+    items: Array<{
+      componentWorkKey: string
+      title: string
+      primaryComponent: { key: string; displayName: string }
+      executionScope: 'single' | 'coordinated'
+      scopeComponents: Array<{
+        key: string
+        displayName: string
+        role: 'primary' | 'contributing' | 'shared_contract'
+      }>
+      required: boolean
+      state: string
+      verification: 'not_started' | 'running' | 'passed' | 'failed' | 'not_applicable'
+      review: 'not_started' | 'running' | 'passed' | 'changes_requested' | 'human_required'
+      pullRequest: { pullRequestId: string; status: string; href: string } | null
+      attentionSeverity: AttentionSeverity
+      href: string
+    }>
+    requiredCount: number
+    optionalCount: number
+    omittedCount: number
+  }
+  componentContracts: {
+    items: Array<{
+      contractKey: string
+      title: string
+      type: string
+      status: string
+      required: boolean
+      producerComponent: string
+      consumerComponent: string
+      href: string | null
+    }>
+    omittedCount: number
+  }
+  humanVerification: {
+    state: 'not_available' | 'pending' | 'in_progress' | 'passed' | 'failed'
+    requiredItemCount: number
+    passedRequiredItemCount: number
+    failedRequiredItemCount: number
+    href: string | null
+  }
+  timeline: {
+    items: Array<{
+      eventKey: string
+      occurredAt: string
+      actorLabel: string
+      kind: 'state_transition' | 'verification' | 'review' | 'decision' | 'pull_request' | 'incident'
+      fromState: string | null
+      toState: string | null
+      summary: string
+      evidenceHref: string | null
+    }>
+    omittedCount: number
+  }
+  snapshot: { observedAt: string; requestId: string; resourceVersion: string }
+}
+```
+
+The endpoint returns at most 30 criteria, 20 Component Works, 12 Component
+Contracts, and 20 timeline events. It reports omission counts and supplies a
+dedicated detail route rather than silently discarding records. It never
+returns raw ContextPackets, prompts, provider output, unredacted logs, or a
+direct database state field.
+
+### P-04.3 Human Planning Decision
+
+Only `ready_for_human_review` can expose the decision action. The API reports
+eligibility through `planningGate.allowedActions` and accepts:
+
+```text
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/commands/record-human-decision
+```
+
+```ts
+interface RecordFeatureUnitPlanningDecisionRequest {
+  decision: 'approved' | 'changes_requested'
+  expectedResourceVersion: string
+  reason?: string
+}
+```
+
+Approval creates `HumanDecision feature_unit_approved`; later activation is
+automatic only after all dependency and safety gates pass. A change request
+requires a trimmed 10 to 2,000 character reason, creates
+`feature_unit_changes_requested`, returns the Unit to `draft`, and requires a
+new FeatureUnitSpec revision and review packet. It never overwrites the old
+Spec or reuses the old review packet as approval evidence.
+
+The action lives in a review panel containing the current Spec revision/hash,
+criteria, required Component mapping, dependencies, risk reason, and planning
+questions. The dialog sends an `Idempotency-Key`; a `409` preserves the typed
+reason but blocks resubmission until a fresh detail snapshot is loaded. The
+browser cannot activate a Feature Unit or directly change its state.
+
+### P-04.4 Layout And Section Contracts
+
+At `1440px` and above:
+
+```text
+breadcrumb
+identity: sequence, title, state, risk, snapshot
+planning/activation gate bands when unresolved
+scope and acceptance criteria (7 columns) | dependency condition (5 columns)
+Component Work matrix (full width)
+Component Contracts (7 columns) | human verification summary (5 columns)
+append-only timeline (full width)
+```
+
+The header includes Roadmap context and immutable constraint-profile version.
+It does not imply that a title is approved scope. Gate bands distinguish:
+
+```text
+Planning gate: may this Unit be approved as intended scope?
+Activation gate: may approved work start without violating dependency or safety policy?
+```
+
+An approved Unit waiting on a server dependency is therefore neither failed nor
+ready to implement; it is explicitly `waiting_for_dependencies`.
+
+Acceptance criteria use a native table at `1024px` and above, then semantic
+cards. Columns are `Requirement`, `Required`, `Verification mode`, `Evidence
+state`, and `Evidence`. The page does not show a percentage complete: command,
+artifact, and human checks have non-equivalent gates. It shows factual counts
+and each criterion's state instead.
+
+Dependencies are two native lists, `선행 조건` and `이 작업을 기다리는 단위`.
+Each prerequisite says satisfied, waived with decision link, or unmet. A
+supplementary diagram may follow P-02's SVG-plus-text contract, but the lists
+are primary and the only representation below `768px`.
+
+The Component Work table uses `Component / Work`, `Scope`, `Required`,
+`State`, `Verification`, `Review`, `PR`, and `Open` columns. Scope describes
+coordinated participating Components in text. Rows never contain pause, retry,
+or cancel: those commands require Component Work detail context. Component
+Contracts render separately; an unaccepted required contract blocks the
+relevant Work from `ready_for_pr` and must be displayed with producer,
+consumer, requirement, state, and proof link.
+
+### P-04.5 Lifecycle, Events, And State Matrix
+
+The timeline is a native ordered list of immutable state/evidence events. It
+shows `from -> to` only for state transitions; other entries state which type
+of evidence changed. It is not an editable workflow diagram.
+
+After initial REST success, the page subscribes to the Project SSE. New events
+increment one pending-update counter. They do not mutate the Work table,
+timeline, criteria, or gate currently under keyboard focus. `업데이트 적용`
+fetches and atomically replaces the complete Feature Unit projection. New
+incidents and required human decisions also render a persistent, non-sensitive
+gate notice.
+
+| Condition | Required presentation |
+|---|---|
+| `draft` | current Spec revision and remaining review-readiness evidence; no decision control |
+| `ready_for_human_review` | review panel with both permitted human decisions |
+| `approved` with unmet dependency | approved scope plus prerequisite links and activation wait condition |
+| `active` | current Component Work states and downstream links |
+| `implementation_done` | implementation evidence; verification/review is next |
+| `verification_running` / `review_running` | factual running state and Run/Review links; no invented percent progress |
+| `needs_revision` | failed verification or accepted finding and impacted Work links |
+| `ready_for_pr` / `pr_created` | PR/evidence summary, never a merge button |
+| `human_verification_pending` | checklist summary and verification route link |
+| `human_verified` / `closed` | immutable evidence summary and read-only navigation |
+| `blocked` / `incident_hold` / `cancelled` | proving event and recovery/incident context; no bypass control |
+
+### P-04.6 Responsive And Accessibility Contract
+
+| Range | Required adaptation |
+|---|---|
+| 1280px+ | full criteria and Component Work tables; two-column scope/dependency and contract/verification rows |
+| 1024-1279px | compact tables; stack panels below their `420px` container threshold |
+| 768-1023px | criteria and Work cards; contracts/verification single column; dependency lists only |
+| 320-767px | single-column sections; header metadata in disclosure rows; every action stays a labelled text button |
+
+The route has one `main` landmark and a Feature Unit `h1`. Gate bands are
+labelled sections before affected content. Tables retain native captions,
+headers, and links; no ARIA grid is used. Status color is always paired with
+text/icon. SSE never moves focus. Long keys and paths use the global
+copy-and-tooltip contract.
+
+### P-04.7 Planned Frontend Boundaries
+
+```text
+apps/control/app/(control)/projects/[projectKey]/roadmaps/[roadmapKey]/feature-units/[featureUnitKey]/page.tsx
+apps/control/features/feature-units/feature-unit-detail-route.tsx
+apps/control/features/feature-units/feature-unit-gate-band.tsx
+apps/control/features/feature-units/feature-unit-planning-decision-dialog.tsx
+apps/control/features/feature-units/acceptance-criteria-table.tsx
+apps/control/features/feature-units/acceptance-criteria-cards.tsx
+apps/control/features/feature-units/feature-dependency-lists.tsx
+apps/control/features/feature-units/component-work-matrix.tsx
+apps/control/features/feature-units/component-contract-list.tsx
+apps/control/features/feature-units/human-verification-summary.tsx
+apps/control/features/feature-units/feature-unit-timeline.tsx
+packages/contracts/src/feature-units/feature-unit-detail.contract.ts
+packages/contracts/src/feature-units/feature-unit-commands.contract.ts
+```
+
+The generated client resolves the nested route and typed errors. The route
+feature owns one snapshot reducer and Project SSE freshness subscription. Each
+section is a typed renderer; it cannot calculate a transition, derive Work
+readiness, or write a HumanDecision.
+
+### P-04.8 Verification Contract
+
+1. State-machine/application tests prove `ready_for_human_review -> draft`
+requires a reason and new Spec revision, and old review evidence cannot be
+reused.
+2. API tests prove nested addressing rejects mismatched Project, Roadmap,
+Feature Unit, and Component Work combinations without disclosure.
+3. Projection tests prove gate values, dependency waiver display,
+required-versus-optional Work handling, contract blockers, and no synthetic
+criterion percentage.
+4. UI tests prove decision-dialog conflict recovery, semantic table/card
+switching, stable SSE refresh, and every lifecycle condition above.
+5. Accessibility and visual checks cover long Korean copy, 30 criteria, 20
+Works, coordinated scope labels, unmet dependency, blocked state, and each
+global viewport.
+6. Human verification proves that an owner can determine why a Unit is not
+active or not PR-ready without a raw log or color-only inference.
+
+### P-04.9 Standards References
+
+- [WAI-ARIA Modal Dialog Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/): planning decision dialog behavior.
+- [WAI-ARIA Grid Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/grid/): native table is preferred for non-editable data.
+- [W3C Complex Images](https://www.w3.org/WAI/tutorials/images/complex/): dependency diagrams need equivalent structured relationships.
