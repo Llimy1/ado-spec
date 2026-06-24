@@ -38,6 +38,10 @@ generated_at: "{{generated_at}}"
 
 ## 4. Visual System
 
+- Design-system provenance: `new | imported | extended | not_applicable`
+- Active design-contract version:
+- Existing design system or reference sources:
+- Approved visual direction / reference artifact IDs:
 - Existing design system:
 - Color rules:
 - Typography rules:
@@ -72,7 +76,16 @@ generated_at: "{{generated_at}}"
 - Desktop:
 - Other:
 
-## 8. Human Verification Checklist Defaults
+## 8. Screen And Responsive Contract
+
+- UI-bearing components:
+- Screen catalog artifact:
+- Required viewport matrix:
+- Component behavior at each breakpoint:
+- Overflow policy for tables, logs, IDs, and long copy:
+- Supported input modes: keyboard, pointer, touch, screen reader
+
+## 9. Human Verification Checklist Defaults
 
 - Visual checks:
 - UX flow checks:
@@ -80,13 +93,13 @@ generated_at: "{{generated_at}}"
 - Responsive checks:
 - Copy/content checks:
 
-## 9. Forbidden Design Behavior
+## 10. Forbidden Design Behavior
 
 - Do not:
 - Do not:
 - Do not:
 
-## 10. Notes
+## 11. Notes
 
 - Open questions:
 - Human decisions:

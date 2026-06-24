@@ -12,6 +12,17 @@ Project constraints define what the target service should become.
 
 They are different layers.
 
+### 1.1 Design-System Separation
+
+ADO has one Control Room design system for its own operating interface. Each
+managed Project has an independent Project Design System. A Project does not
+inherit the Control Room's colors, typography, layout, components, voice, or
+motion. Conversely, Project branding never changes the Control Room.
+
+Both layers must meet the Shared Quality Baseline defined in
+`PROJECT_DESIGN_GOVERNANCE.md`: accessibility, responsive integrity, explicit
+system state, loading/error/recovery states, and evidence-based UI verification.
+
 ## 2. Constraint Layers
 
 Precedence:
@@ -58,11 +69,12 @@ Profiles may be versioned. Only one version is active for new work.
 2. ADO generates Service Constraint Questionnaire
 3. Human answers questionnaire
 4. Codex Planner drafts ProjectConstraintProfile
-5. ADO generates project constraint docs
-6. Human reviews and edits if needed
-7. Human approves ProjectConstraintProfile
-8. ADO marks constraints active
-9. Future ContextPackets include only relevant constraint excerpts
+5. For UI-bearing components, ADO creates or imports a Project Design System
+6. ADO generates project constraint docs and a Design Contract candidate
+7. Human reviews the design/architecture/verification baseline
+8. Human approves ProjectConstraintProfile and the active Design Contract
+9. ADO marks constraints active
+10. Future ContextPackets include only relevant constraint excerpts
 ```
 
 ## 5. Required Project Constraint Documents
@@ -71,6 +83,10 @@ For each project, ADO generates:
 
 - `PROJECT_SPEC.md`
 - `PROJECT_DESIGN_CONSTRAINTS.md`
+- `PROJECT_DESIGN_SYSTEM.md` for UI-bearing Projects
+- `SCREEN_CATALOG.md` for UI-bearing Components
+- `RESPONSIVE_MATRIX.md` for UI-bearing Components
+- `UI_ACCEPTANCE_CHECKLIST.md` for UI-bearing Components
 - `PROJECT_ARCHITECTURE.md`
 - `PROJECT_VERIFICATION_PROFILE.md`
 - `ROADMAP.md`
@@ -92,6 +108,12 @@ Human approval must confirm:
 - the architecture constraints are not over-specified
 - verification expectations are realistic
 - forbidden behavior is clear
+
+For a UI-bearing Project, approval additionally confirms the active Design
+Contract version, visual references or approved direction, responsive matrix,
+and required manual visual checks. A backend-only Project records
+`design_applicability: not_applicable` with a reason instead of fabricating UI
+documents.
 
 ## 7. Context Packet Inclusion
 

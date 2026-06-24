@@ -217,6 +217,7 @@ ADO implementation constraints define how this orchestration system is built. Th
 - `CODING_STANDARDS.md`
 - `NESTJS_MONOREPO_ARCHITECTURE.md`
 - `CONTROL_ROOM_API_UI_SPEC.md`
+- `CONTROL_ROOM_DESIGN_SYSTEM.md`
 - `BOOTSTRAP_PROTOCOL.md`
 - `SPEC_LIBRARY_PLATFORM_BOUNDARY.md`
 - `MANAGED_PROJECT_MONOREPO_POLICY.md`
@@ -225,9 +226,15 @@ ADO implementation constraints define how this orchestration system is built. Th
 
 Project/service constraints define how each target product should be designed, implemented, and verified. They are generated per Project from a human-approved ProjectConstraintProfile.
 
+The ADO Control Room design system and every managed Project design system are
+separate products. They do not visually inherit from one another. Only the
+shared quality baseline (accessibility, responsive integrity, explicit state,
+error/recovery behavior, and evidence-based UI verification) applies to both.
+
 Project constraint generation is defined in:
 
 - `PROJECT_CONSTRAINT_GENERATION.md`
+- `PROJECT_DESIGN_GOVERNANCE.md`
 - `SERVICE_CONSTRAINT_QUESTIONNAIRE.md`
 - `templates/PROJECT_DESIGN_CONSTRAINTS_TEMPLATE.md`
 - `templates/PROJECT_ARCHITECTURE_TEMPLATE.md`

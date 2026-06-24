@@ -3,6 +3,10 @@
 This document defines the v1 control plane for Agent Development Orchestrator
 (ADO). It applies to `apps/api` and `apps/control` in the NestJS monorepo.
 
+Its visual, responsive, interaction, and accessibility token contract is
+defined by `CONTROL_ROOM_DESIGN_SYSTEM.md`. That design system applies only to
+the ADO Control Room, never to managed Project products.
+
 The control room makes the database-backed orchestration system observable and
 human-operable. It is not an alternate source of truth, an agent shell, or a
 database administration console.
