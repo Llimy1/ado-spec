@@ -1879,3 +1879,97 @@ packages/contracts/src/runs/attempt-log.contract.ts
 - [WAI-ARIA Tabs Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/tabs/): manual activation when panel load latency is material.
 - [WAI-ARIA Table Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/table/): native tables for static run facts.
 - [W3C ARIA status technique](https://www.w3.org/WAI/WCAG20/Techniques/aria/ARIA22): noninterrupting new-output notices.
+
+---
+
+## P-07: Verification And Review Evidence
+
+### P-07.1 Routes And Questions
+
+| Route | Primary question | Authority |
+|---|---|---|
+| `/verification-runs/{verificationRunId}` | Did required deterministic verification run against the exact Work and Spec revision? | `GET /v1/verification-runs/{verificationRunId}` |
+| `/reviews/{reviewGroupId}` | What did each reviewer find, and what did the Arbiter decide? | `GET /v1/review-groups/{reviewGroupId}` |
+
+Both UUID routes are read-only evidence views. They cannot mark a test passed,
+silence a finding, edit a reviewer result, or create a PR. That preserves the
+separation between implementation, verification, independent review, and
+arbitration.
+
+### P-07.2 Verification Run Contract
+
+The response binds Component Work route, git snapshot commit/tree/base IDs,
+VerificationProfile key/version, effective Spec Library revision/manifest hash,
+start/end/failure details, `requiredPassed`, EvidenceGate result, and commands.
+Every command has its `commandRunId`, key, required flag, state, expected exit
+codes, actual exit/signal/timeout, duration, redacted output links, and
+authorized evidence links. If profile, snapshot, or Spec revision does not
+match evaluated Work, the page renders `evidence_invalid`, never a pass.
+
+Commands use a native table at desktop and cards below `1024px`. `not_started`,
+`running`, `passed`, `failed`, `timed_out`, `blocked`, and `evidence_invalid`
+are distinct. A green command never becomes an overall claim: the stored
+`requiredPassed` and its EvidenceGate reference are the only page conclusion.
+
+### P-07.3 Review Group Contract
+
+The response includes review packet/hash, risk level, required reviewer count,
+group state, reviewer results, findings, server deduplication links,
+ArbiterDecision, and RevisionTasks. A reviewer result identifies reviewer key,
+provider/model, runner-local status, completed time, and result Artifact link.
+It never exposes private reasoning or unredacted raw output.
+
+Findings use a native table: severity, category, title, authorized file/line,
+source reviewer count, resolution, evidence, and RevisionTask. The API groups
+findings by `deduplication_hash`; the browser never decides duplicates. Default
+sort is accepted P0/P1, accepted P2, human-required, then informational.
+
+The Arbiter panel renders one active decision:
+
+```text
+ready_for_pr | needs_revision | human_required | blocked
+```
+
+It includes decision Artifact, timestamp, summary, unresolved accepted finding
+count, and whether PR creation is permitted. `ready_for_pr` permits the next
+evidence gate only; it is not a GitHub merge approval.
+
+### P-07.4 UI And Evidence Rules
+
+Verification layout is identity/evidence binding, required-result banner,
+command results, artifacts. Review layout is group identity, reviewer coverage,
+Arbiter panel, findings, RevisionTasks. Both use semantic headings/native
+tables and one `role=status` freshness notice. Committed SSE changes do not
+reorder a focused table; `업데이트 적용` refetches the full projection.
+
+Failed, timeout, partial review, missing reviewer, mismatched evidence,
+redacted artifact, stale snapshot, and denied states show a visible reason and
+authorized evidence link. There is no `ignore finding` action. Human-required
+routes to Decision Inbox; revision-required routes to RevisionTask/Work.
+
+### P-07.5 Verification And Files
+
+Tests prove UUID addressing, redaction, profile/snapshot/spec mismatch
+rejection, risk-based reviewer-count enforcement, P0/P1 PR blocking,
+server-owned deduplication, no automatic reorder, and all terminal states.
+Human verification proves reviewer disagreement is never mistaken for an
+Arbiter decision.
+
+```text
+apps/control/app/(control)/verification-runs/[verificationRunId]/page.tsx
+apps/control/app/(control)/reviews/[reviewGroupId]/page.tsx
+apps/control/features/verification/verification-run-detail.tsx
+apps/control/features/verification/verification-command-results.tsx
+apps/control/features/reviews/review-group-detail.tsx
+apps/control/features/reviews/reviewer-coverage.tsx
+apps/control/features/reviews/arbiter-decision-panel.tsx
+apps/control/features/reviews/review-findings-table.tsx
+apps/control/features/reviews/revision-task-list.tsx
+packages/contracts/src/verification/verification-run.contract.ts
+packages/contracts/src/reviews/review-group.contract.ts
+```
+
+### P-07.6 Standards References
+
+- [WAI-ARIA Table Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/table/): static evidence tables retain native semantics.
+- [W3C ARIA status technique](https://www.w3.org/WAI/WCAG20/Techniques/aria/ARIA22): noninterrupting committed-update notices.
