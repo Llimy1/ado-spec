@@ -420,13 +420,15 @@ needs_revision | ready_for_pr | human_required | blocked | failed
 
 ### Purpose
 
-Provide human-mediated external advice. Claude output is a CandidateArtifact only.
+Provide human-started external advice. Claude output is a CandidateArtifact
+only until ADO validates and promotes it through policy.
 
 ### Inputs
 
 - External-safe Claude packet
 - Redacted context
 - Human question
+- Scoped Agent Ingest submit URL and one-time or short-lived submit token, when enabled
 
 ### Allowed Actions
 
@@ -435,11 +437,14 @@ Provide human-mediated external advice. Claude output is a CandidateArtifact onl
 - Suggest alternatives.
 - Ask clarifying questions.
 - Produce structured recommendation if requested.
+- Submit the completed result to ADO Ingest API when the packet instructs it.
 
 ### Forbidden Actions
 
 - Do not receive secrets, production data, or PII.
 - Do not directly update DB state.
+- Do not receive or request database credentials.
+- Do not call internal endpoints other than the scoped Ingest API endpoint.
 - Do not approve Feature Units.
 - Do not mark verification passed.
 - Do not create PRs.
@@ -451,20 +456,27 @@ Artifacts:
 
 - CandidateArtifact
 - ImportedClaudeResponse
+- AgentIngestResult
 
 Schema:
 
-- `schemas/claude_import_output.schema.json`
+- Transport submit payload: `schemas/agent_ingest_result.schema.json`
+- Imported response artifact: `schemas/claude_import_output.schema.json`
 
-Status values:
+AgentIngestRun status values:
 
 ```text
-imported | validated | needs_human_review | rejected | promoted
+submitted | validated | needs_human_review | rejected | promoted | failed
 ```
+
+ImportedClaudeResponse artifact status values remain defined by
+`schemas/claude_import_output.schema.json`.
 
 ### Failure Behavior
 
-If imported response fails schema validation, store it as markdown-only CandidateArtifact and mark `needs_human_review`.
+If the submitted response fails schema validation, store safe raw content as a
+markdown-only CandidateArtifact or quarantine it according to policy, then mark
+the ingest run `needs_human_review` or `rejected`.
 
 ## 10. Git Workspace Manager
 

@@ -14,6 +14,7 @@ pins an approved immutable Spec Library revision.
 - `ADO_MASTER_SPEC.ko.md`: Korean human-readable guide. The English master spec remains canonical.
 - `DOCUMENT_CONSTRAINTS.md`: document-level behavior constraint rules for agents.
 - `AGENT_ROLE_SPECS.md`: role-level contracts for ADO actors and agents.
+- `AGENT_INGEST_PROTOCOL.md`: scoped Ingest API contract for human-started external agent results.
 - `SCHEMA_CONSTRAINTS.md`: schema-level structured output rules for agents and runners.
 - `RUNTIME_CONSTRAINTS.md`: runtime-level enforcement rules for agent processes and runners.
 - `RUNTIME_RULES.md`: practical runtime defaults for Worker, Codex, verification, local models, and PR manager.

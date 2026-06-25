@@ -127,6 +127,7 @@ Policy/state constraints are defined in:
 - `POLICY_STATE_CONSTRAINTS.md`
 - `STATE_TRANSITION_RULES.md`
 - `EVIDENCE_GATES.md`
+- `AGENT_INGEST_PROTOCOL.md`
 
 ## 7. Core Data Model
 
@@ -331,21 +332,31 @@ AGENTS.md contains short execution rules only. Long context lives in ContextPack
 
 ## 13. Claude Interactive
 
-Claude is v1 human-mediated, not an automatic agent.
+Claude is v1 human-started, not an automatically executed SDK/MCP agent.
+Claude Code may submit its result directly to ADO through the scoped Agent
+Ingest API. It never receives database credentials and never writes DB rows
+directly.
 
 Flow:
 
 ```text
 ADO exports external-safe packet
 -> human pastes into Claude
--> human imports Claude response
--> ADO stores CandidateArtifact
--> human promotes/rejects
+-> Claude Code posts result to ADO Ingest API
+-> ADO stores raw and structured artifacts
+-> ADO validates result and creates follow-up Job when policy allows
+-> Worker leases the Job and runs Codex
 ```
 
 Claude responses are candidate artifacts, not state-transition evidence.
 
-Claude SDK, Claude MCP automatic integration, and callback import endpoints are excluded from v1.
+The canonical ingest contract is defined in:
+
+- `AGENT_INGEST_PROTOCOL.md`
+- `schemas/agent_ingest_result.schema.json`
+- `schemas/claude_import_output.schema.json`
+
+Claude SDK and Claude MCP automatic integration are excluded from v1.
 
 ## 14. Local Review Council
 
@@ -501,6 +512,7 @@ Feature Units:
 - full visual regression platform
 - automatic dependency upgrade
 - automatic GitHub review comment resolve
+- direct database writes from external agents
 
 ## 21. Success Definition
 

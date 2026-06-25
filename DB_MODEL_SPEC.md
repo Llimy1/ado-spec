@@ -391,6 +391,23 @@ created; a packet cannot be `external_safe=true` unless redaction passed.
 `verification_run_id`, `effective_spec_library_revision_id`,
 `spec_manifest_sha256`, `review_scope_json`, and `expires_at`.
 
+### 7.4 `integrations.AgentIngestRun`
+
+`AgentIngestRun` records a human-started external agent session that may submit
+its result through ADO Ingest API. It is stateful and auditable; it is not a
+direct execution attempt owned by Worker.
+
+Fields: `project_id`, `agent_ingest_run_key`, `agent_kind`,
+`target_state_subject_id`, `source_packet_artifact_id`, `expected_result_type`,
+`submit_token_hash`, `submit_token_expires_at`, `idempotency_key`,
+`raw_result_artifact_id` nullable, `structured_result_artifact_id` nullable,
+`validation_result_artifact_id` nullable, `created_follow_up_job_id` nullable,
+`status_subject_id`, `created_by_actor_id`, `submitted_at`, and `expires_at`.
+
+Unique constraints: `(project_id, agent_ingest_run_key)` and
+`(project_id, idempotency_key)`. The submit token is stored only as a hash. The
+raw token is never stored, logged, or returned after packet issuance.
+
 ## 8. Execution And Verification Tables
 
 ### 8.1 `execution.Job`
@@ -634,6 +651,8 @@ create/bind action; direct model saves are insufficient:
   profile, and effective SpecLibraryRevision/manifest hash.
 - `Artifact` evidence is `valid`, non-stale, non-quarantined, and has an
   allowed classification before entering an EvidenceGateResult.
+- `AgentIngestRun` target, source packet, raw result, structured result, and
+  follow-up Job all belong to the same Project and expected result type.
 - HumanDecision and ManualOverride actors are human actors.
 - A StateTransition uses an allowed StateMachine actor, allowed PolicyDecision,
   passed EvidenceGateResult, and the requested target/current status.

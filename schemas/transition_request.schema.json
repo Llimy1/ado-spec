@@ -28,7 +28,7 @@
       "required": ["target_type", "target_key", "project_key", "feature_unit_key", "component_work_key"],
       "properties": {
         "target_type": {
-          "enum": ["roadmap", "feature_unit", "component_work", "job", "agent_run", "command_run", "verification_run", "review_group", "artifact", "pull_request", "human_verification_item", "safety_event", "incident_report", "external_transfer_event"]
+          "enum": ["roadmap", "feature_unit", "component_work", "job", "agent_run", "agent_ingest_run", "command_run", "verification_run", "review_group", "artifact", "pull_request", "human_verification_item", "safety_event", "incident_report", "external_transfer_event"]
         },
         "target_key": { "type": "string" },
         "project_key": { "type": ["string", "null"] },

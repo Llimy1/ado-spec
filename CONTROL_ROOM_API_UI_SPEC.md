@@ -58,6 +58,7 @@ system health, live-connection state, and the current authenticated operator.
 | Roadmap / Feature Unit | What is the approved functional goal and its dependency state? | source roadmap, scope, acceptance criteria, dependency graph, approval history, linked Component Work |
 | Component Work | What implementation unit is executing and on which branch? | component root, allowed paths, branch/worktree, state timeline, jobs, verification, reviews, PR |
 | Run Detail | What happened during this execution? | immutable attempt summary, timestamps, runner identity, redacted logs, artifacts, exit/timeout result, retry history |
+| Agent Inbox / Claude Runs | What external agent result arrived and what will ADO do next? | ingest run status, raw response, structured parse, validation result, risks, questions, created Codex jobs |
 | Review And Verification | Is the work ready for a PR and human verification? | deterministic verification evidence, local reviewer findings, arbiter result, resolution history, human checklist |
 | Incidents | What requires recovery or a decision? | incident record, severity, affected subjects, recovery actions, audit timeline |
 
@@ -135,6 +136,8 @@ GET /v1/projects/{projectKey}/jobs/{jobKey}
 GET /v1/projects/{projectKey}/jobs/{jobKey}/attempts
 GET /v1/job-attempts/{jobAttemptId}
 GET /v1/agent-runs/{agentRunId}
+GET /v1/agent-ingest/runs
+GET /v1/agent-ingest/runs/{agentIngestRunId}
 GET /v1/verification-runs/{verificationRunId}
 GET /v1/review-groups/{reviewGroupId}
 GET /v1/pull-requests/{pullRequestId}
@@ -176,7 +179,26 @@ POST /v1/projects/{projectKey}/incidents/{incidentKey}/commands/request-recovery
 The API never offers `POST /state`, bulk update, arbitrary retry, arbitrary
 shell, direct document overwrite, or merge endpoints.
 
-### 5.3 Response And Error Semantics
+### 5.3 Agent Ingest Endpoint
+
+Agent Ingest is a scoped external-agent submit surface, not a browser command.
+It is defined by `AGENT_INGEST_PROTOCOL.md`.
+
+```text
+POST /v1/agent-ingest/runs/{agentIngestRunId}/result
+```
+
+The endpoint uses a one-time or short-lived bearer submit token and an
+`Idempotency-Key`. It does not use a Human Owner session cookie. A successful
+request means an external agent result has been produced and submitted. The
+API stores raw and structured artifacts, validates them, audits the event, and
+creates follow-up Jobs when policy allows.
+
+The Control Room reads ingest runs through REST and displays raw response
+metadata, redacted content, structured parse, validation failures, policy
+decision, and linked follow-up Jobs. Raw responses are not sent through SSE.
+
+### 5.4 Response And Error Semantics
 
 Use these response classes consistently:
 
@@ -259,6 +281,9 @@ job.attempt.updated
 worker.updated
 log.available
 artifact.available
+agent_ingest.result_submitted
+agent_ingest.validation_completed
+agent_ingest.follow_up_created
 verification.completed
 review.finding.created
 pull_request.updated
