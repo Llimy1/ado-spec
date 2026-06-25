@@ -31,6 +31,7 @@ pins an approved immutable Spec Library revision.
 - `BOOTSTRAP_PROTOCOL.md`: bootstrap stages plus A1 entry and acceptance criteria.
 - `SPEC_LIBRARY_PLATFORM_BOUNDARY.md`: authority, versioning, and pinning contract between the Spec Library and ADO Platform.
 - `MANAGED_PROJECT_MONOREPO_POLICY.md`: public managed-Project monorepo, coordinated work, branch, PR, and verification rules.
+- `MANAGED_PROJECT_FILE_STRUCTURE_POLICY.md`: default managed-Project monorepo and Component-internal file structure generation rules.
 - `DJANGO_ARCHITECTURE.md`: historical Django draft only; it is not a current implementation contract.
 - `SERVICE_LAYER_RULES.md`: service, selector, policy, runner, and state-machine boundaries.
 - `TESTING_STRATEGY.md`: required test layers and safety coverage for ADO.

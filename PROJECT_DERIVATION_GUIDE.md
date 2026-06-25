@@ -33,6 +33,7 @@ Create a project spec with:
 - project key
 - product/service name
 - one public monorepo repository (required in v1)
+- selected managed Project file structure profile
 - components
 - environments
 - project constraint profile
@@ -64,6 +65,9 @@ Human approval is required before execution.
 
 ## 4. Define Components
 
+The default file structure profile is `standard_product_monorepo` from
+`MANAGED_PROJECT_FILE_STRUCTURE_POLICY.md`.
+
 Typical component types:
 
 - app
@@ -76,8 +80,11 @@ Typical component types:
 - research
 
 Each component maps to a root in the one Project repository and to a
-verification profile. Multiple component roots in the same repository are the
-normal Project shape.
+verification profile. Each component also declares an internal structure
+profile such as `nextjs_feature_app`, `expo_feature_app`,
+`nestjs_module_api`, `pure_shared_package`, `project_ui_package`, or
+`transport_contract_package`. Multiple component roots in the same repository
+are the normal Project shape.
 
 Each component also inherits relevant project constraints. For example, a web component receives web design and frontend architecture constraints, while a server component receives API, data, and backend verification constraints.
 

@@ -33,6 +33,12 @@ The exact topology is Project-specific. ADO records each Component's
 names. Several Components may map to the same Repository, but their roots must
 be explicit and may not ambiguously overlap without Human Owner approval.
 
+The default Project file structure profile is defined in
+`MANAGED_PROJECT_FILE_STRUCTURE_POLICY.md`. That document defines the
+`standard_product_monorepo` layout and Component-internal structure profiles.
+This monorepo policy owns repository/branch/work scope rules; the file
+structure policy owns default directories and allowed path derivation.
+
 ## 2. Component Work Execution Scope
 
 `ComponentWork` remains the branch, worktree, verification, and PR unit. It

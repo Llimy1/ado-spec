@@ -22,8 +22,12 @@ generated_from_db: false
 
 ## Components
 
-| Key | Type | Repository | Path Scope | Verification Profile |
-|---|---|---|---|---|
+Layout Profile:
+
+- `standard_product_monorepo`
+
+| Key | Type | Repository | Root Path | Internal Structure Profile | Verification Profile |
+|---|---|---|---|---|---|
 
 ## ADO Spec Library Revision
 
