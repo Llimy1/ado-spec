@@ -67,7 +67,9 @@ These documents define ADO itself.
 - `RUNTIME_RULES.md`
 - `REPOSITORY_RULES.md`
 - `SECURITY_POLICY.md`
-- `VERIFICATION_PROFILES.md`
+- `TESTING_STRATEGY.md`
+- `EVIDENCE_GATES.md`
+- `JOB_HANDLER_CATALOG.md`
 
 Canonical system documents are maintained in the ADO specification repository.
 Generated project documents and agent packets must record the effective

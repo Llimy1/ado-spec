@@ -41,7 +41,7 @@ or ExternalTransferEvent.
 
 | Domain | Required constraints |
 |---|---|
-| Identity/project | Actor `(actor_type, actor_key)` unique; SpecLibraryRevision `(repository_identity, commit_sha)` and `manifest_sha256` unique; Project `project_key` unique; one active public Repository and unique Component keys per Project; human actor iff auth user exists. |
+| Identity/project | Actor `(actor_type, actor_key)` unique; SpecLibraryRevision `(repository_identity, commit_sha)` and `manifest_sha256` unique; Project `project_key` unique; one active public Repository and unique Component keys per Project; human actor iff auth user exists; `state_machine`, `policy_engine`, and `evidence_gate` actors are non-human registered system actors. |
 | Configuration | one primary ComponentRepository per Component; one active ProjectConstraintProfile per Project; unique profile versions. |
 | Planning | Roadmap key unique per Project; FeatureUnit key/sequence unique per Roadmap; acceptance criterion/checklist keys unique per FeatureUnit; dependency rows unique and not self-referential. |
 | Component work | ComponentWork key unique per FeatureUnit; ComponentWorkScope component/root unique within work; one primary scope; work relations unique/not self-referential; allowed path rules unique within work. |

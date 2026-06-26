@@ -44,7 +44,7 @@
       "additionalProperties": false,
       "required": ["actor_type", "actor_key", "role"],
       "properties": {
-        "actor_type": { "enum": ["human", "worker", "system", "codex", "local_model", "claude_import", "github", "unknown"] },
+        "actor_type": { "enum": ["human", "worker", "system", "state_machine", "policy_engine", "evidence_gate", "codex", "local_model", "claude_import", "github", "unknown"] },
         "actor_key": { "type": "string" },
         "role": { "type": "string" }
       }

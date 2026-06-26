@@ -181,33 +181,38 @@ Examples:
 
 ### 4.2 Services
 
-Service functions use verb-first names:
+Service functions use verb-first camelCase names in TypeScript code:
 
-- `create_project_from_spec`
-- `decompose_roadmap`
-- `request_state_transition`
-- `lease_next_job`
-- `record_verification_result`
-- `generate_context_packet`
-- `create_pull_request`
+- `createProjectFromSpec`
+- `decomposeRoadmap`
+- `requestStateTransition`
+- `leaseNextJob`
+- `recordVerificationResult`
+- `generateContextPacket`
+- `createPullRequest`
 
 ### 4.3 Selectors
 
-Selector functions use read-oriented names:
+Selector functions use read-oriented camelCase names:
 
-- `get_project_overview`
-- `list_ready_component_work`
-- `find_open_revision_tasks`
-- `load_context_packet_sources`
+- `getProjectOverview`
+- `listReadyComponentWork`
+- `findOpenRevisionTasks`
+- `loadContextPacketSources`
 
 ### 4.4 Policies
 
 Policy functions return structured decisions, not booleans:
 
-- `can_start_component_work`
-- `can_export_external_packet`
-- `can_create_pr`
-- `can_promote_claude_import`
+- `canStartComponentWork`
+- `canExportExternalPacket`
+- `canCreatePr`
+- `canPromoteClaudeImport`
+
+CLI command names, database function names, migration identifiers, and
+documented operational commands may use snake_case or kebab-case when that
+form is the interface contract. This exception does not apply to ordinary
+TypeScript functions, methods, classes, or variables.
 
 ## 5. Error Handling
 

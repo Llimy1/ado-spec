@@ -98,15 +98,17 @@ run. Historical records retain their foreign key to it.
 
 | Field | Type | Notes |
 |---|---|---|
-| `actor_type` | enum | `human`, `system`, `worker`, `codex`, `local_model`, `claude_import`, `github`, `unknown`. |
+| `actor_type` | enum | `human`, `system`, `state_machine`, `policy_engine`, `evidence_gate`, `worker`, `codex`, `local_model`, `claude_import`, `github`, `unknown`. |
 | `actor_key` | varchar | Stable non-secret key, unique with `actor_type`. |
 | `user_account_id` | FK `auth.UserAccount`, nullable | Required for `human`; null for non-human actors. |
 | `display_name` | varchar | Presentation only. |
 | `is_active` | boolean | Inactive actors cannot initiate new work. |
 
 Unique constraint: `(actor_type, actor_key)`. A `human` actor must have a
-`user_account_id`; a non-human actor must not. Enforce this with a check
-constraint.
+`user_account_id`; a non-human actor must not. `state_machine`,
+`policy_engine`, and `evidence_gate` are registered system actors with their
+own actor types so state, policy, and evidence records can prove which engine
+applied or checked them. Enforce this with check constraints.
 
 Every table below records scope using real foreign keys whenever the target is
 known. ADO deliberately does not use polymorphic ORM relations for critical

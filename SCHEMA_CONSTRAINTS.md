@@ -240,34 +240,41 @@ Canonical schema files live under `schemas/`.
 
 Current schema set:
 
+- `ado_spec_lock.schema.json`
+- `agent_ingest_result.schema.json`
+- `arbiter_decision.schema.json`
+- `claude_import_output.schema.json`
 - `codex_planner_output.schema.json`
 - `codex_implementer_output.schema.json`
-- `verification_runner_output.schema.json`
-- `local_review_result.schema.json`
-- `arbiter_decision.schema.json`
-- `github_pr_manager_output.schema.json`
 - `document_generator_output.schema.json`
-- `claude_import_output.schema.json`
-- `transition_request.schema.json`
-- `policy_decision.schema.json`
 - `evidence_gate_result.schema.json`
-- `state_transition.schema.json`
+- `github_pr_manager_output.schema.json`
+- `local_review_result.schema.json`
+- `policy_decision.schema.json`
 - `project_constraint_profile.schema.json`
+- `spec_library_manifest.schema.json`
+- `state_transition.schema.json`
+- `transition_request.schema.json`
+- `verification_runner_output.schema.json`
 
 Current v1 schemas:
 
+- `ado_spec_lock.schema.json`
+- `agent_ingest_result.schema.json`
+- `arbiter_decision.schema.json`
+- `claude_import_output.schema.json`
 - `codex_planner_output.schema.json`
 - `codex_implementer_output.schema.json`
-- `verification_runner_output.schema.json`
-- `local_review_result.schema.json`
-- `arbiter_decision.schema.json`
-- `github_pr_manager_output.schema.json`
 - `document_generator_output.schema.json`
-- `claude_import_output.schema.json`
-- `transition_request.schema.json`
-- `policy_decision.schema.json`
 - `evidence_gate_result.schema.json`
+- `github_pr_manager_output.schema.json`
+- `local_review_result.schema.json`
+- `policy_decision.schema.json`
+- `project_constraint_profile.schema.json`
+- `spec_library_manifest.schema.json`
 - `state_transition.schema.json`
+- `transition_request.schema.json`
+- `verification_runner_output.schema.json`
 
 ## 13. Acceptance Criteria
 
