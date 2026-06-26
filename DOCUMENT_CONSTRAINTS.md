@@ -59,7 +59,7 @@ These documents define ADO itself.
 - `DOCUMENT_CONSTRAINTS.md`
 - `AGENT_ROLE_SPECS.md`
 - `CODING_STANDARDS.md`
-- `NESTJS_MONOREPO_ARCHITECTURE.md`
+- `DJANGO_NEXT_PLATFORM_ARCHITECTURE.md`
 - `CONTROL_ROOM_API_UI_SPEC.md`
 - `CONTROL_ROOM_DESIGN_SYSTEM.md`
 - `DESIGN_SYSTEM_REFERENCE_BENCHMARK.md`
@@ -79,6 +79,10 @@ These documents define ADO itself.
 Canonical system documents are maintained in the ADO specification repository.
 Generated project documents and agent packets must record the effective
 immutable Spec Library revision and manifest hash that selected them.
+
+`NESTJS_MONOREPO_ARCHITECTURE.md` and `DJANGO_ARCHITECTURE.md` are historical
+drafts only. They can explain prior decisions, but they cannot override
+`DJANGO_NEXT_PLATFORM_ARCHITECTURE.md` for new implementation work.
 
 ### 4.2 Generated Project Documents
 

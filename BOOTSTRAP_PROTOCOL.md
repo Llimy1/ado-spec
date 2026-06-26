@@ -24,49 +24,45 @@ Human Owner performs final merge outside ADO.
 
 ## 2. Required Repository Shape
 
-ADO is one pnpm/Turborepo monorepo with this initial structure:
+ADO is one Django + Next monorepo with separate Python and frontend tooling:
 
 ```text
 ado/
   apps/
-    api/                 # NestJS REST/OpenAPI/SSE API
-    worker/              # NestJS standalone Worker
+    api/                 # Django + Django Ninja REST/OpenAPI/SSE API
+    worker/              # Python Worker entrypoints
     control/             # Next.js control room
   packages/
-    domain/
-    application/
-    persistence/
-    contracts/
-    runtime/
-    config/
-    testkit/
+    contracts/           # OpenAPI artifact and generated TS client
+    ui/                  # optional Control Room UI components
+    design-tokens/       # optional generated token artifacts
   infra/
     docker/
   docs/
+  pyproject.toml
+  uv.lock
   package.json
   pnpm-workspace.yaml
-  turbo.json
-  tsconfig.base.json
-  compose.yaml
+  pnpm-lock.yaml
+  Makefile
   .env.example
 ```
 
-The repository has one lockfile. Root tooling owns TypeScript base options,
-formatting, linting, package-manager version, and Turbo task definitions.
-Apps may declare only their runtime dependencies and must not own lockfiles or
-independent lint/type-check standards.
+Python dependencies are managed with `uv`. Frontend dependencies are managed
+with `pnpm`. Root commands are exposed through `Makefile` or `justfile` so a
+developer does not need to remember which package manager owns each task.
 
 ## 3. Local Dependencies And Configuration
 
-v1 local development requires Node.js at the version pinned in the repository,
-pnpm at the version pinned in `package.json`, Git, and PostgreSQL. Docker
-Compose may provide PostgreSQL (and optional pgvector later), but it is not
-required as the production runtime manager.
+v1 local development requires Python, `uv`, Node.js, `pnpm`, Git, and
+PostgreSQL. Docker Compose may provide PostgreSQL (and optional pgvector
+later), but it is not required as the production runtime manager.
 
 No Kafka, Redis, BullMQ, GraphQL server, cloud queue, or hosted provider is a
 bootstrap prerequisite.
 
-`packages/config` validates environment variables before API or Worker startup.
+The Django settings layer validates environment variables before API or Worker
+startup.
 The committed `.env.example` contains names and non-secret examples only:
 
 ```text
@@ -91,29 +87,28 @@ is fixed here:
 
 | Command | Required result |
 |---|---|
-| `pnpm dev:api` | starts the Nest API with validated local configuration |
-| `pnpm dev:control` | starts the Next.js control room against the local API |
-| `pnpm dev:worker` | starts one Nest standalone Worker with a unique worker ID |
-| `pnpm lint` | lints every workspace package |
-| `pnpm typecheck` | type-checks every workspace package without emitting artifacts |
-| `pnpm test` | runs deterministic unit and module tests |
-| `pnpm test:integration` | runs PostgreSQL-backed integration tests in an isolated database |
-| `pnpm build` | builds API, Worker, Control, and shared packages |
-| `pnpm db:migration:generate` | proposes a TypeORM migration for reviewed local changes only |
-| `pnpm db:migration:run` | applies reviewed migrations to the selected non-production database |
-| `pnpm db:migration:show` | reports applied and pending migrations |
-| `pnpm openapi:generate` | produces the versioned API specification artifact |
+| `make dev-api` | starts the Django API with validated local configuration |
+| `make dev-control` | starts the Next.js control room against the local API |
+| `make dev-worker` | starts one Python Worker with a unique worker ID |
+| `make lint` | runs Python and frontend lint checks |
+| `make typecheck` | runs Python type checks where enabled and TypeScript typecheck |
+| `make test` | runs deterministic Python and frontend tests |
+| `make test-integration` | runs PostgreSQL-backed integration tests in an isolated database |
+| `make build-control` | builds the Next.js Control Room |
+| `make db-migrate` | applies reviewed Django migrations to the selected non-production database |
+| `make db-plan` | reports pending migrations/checks without mutating production |
+| `make openapi` | produces the versioned API specification artifact |
+| `make generate-client` | regenerates the TypeScript client from OpenAPI |
 
-`turbo.json` encodes task inputs, outputs, dependencies, and cacheability. Any
-task that changes a database, creates a worktree, invokes a provider, sends a
-network request, creates a PR, or writes durable artifacts is non-cacheable.
+Tasks that change a database, create a worktree, invoke a provider, send a
+network request, create a PR, or write durable artifacts are non-cacheable.
 
 ## 5. Database Bootstrap Rules
 
-PostgreSQL is initialized by reviewed TypeORM migrations. `synchronize` is
-disabled in all environments. A migration can create ordinary columns and
-relations, but PostgreSQL-specific indexes, constraints, triggers, extensions,
-and queue locking SQL are explicit and reviewed.
+PostgreSQL is initialized by reviewed Django migrations. Django ORM handles
+ordinary model relations. PostgreSQL-specific indexes, partial constraints,
+triggers, extensions, and queue locking SQL are explicit reviewed migrations,
+typically through `RunSQL` or custom migration operations.
 
 Bootstrap provides separate development, test, and production connection
 configuration. Integration tests never share the developer database and never
@@ -192,7 +187,7 @@ artifact or runs a deterministic verifier. Only after its lease, timeout,
 outbox, audit, and human review evidence are proven may Codex/Git/PR handlers
 be introduced. Each handler is separately approved and can be disabled.
 
-## 9. A1: NestJS Monorepo Foundation
+## 9. A1: Django + Next Monorepo Foundation
 
 A1 is the first implementation Feature Unit. Its outcome is an executable,
 testable, observable foundation, not a complete orchestration system.
@@ -201,17 +196,17 @@ testable, observable foundation, not a complete orchestration system.
 
 A1 includes:
 
-- pnpm workspace and Turbo task graph;
-- `apps/api` NestJS application with configuration validation and health/
-  readiness endpoints;
-- `apps/worker` Nest standalone application context with graceful startup and
-  shutdown, but no Job lease loop;
+- Python `uv` workspace/config and frontend `pnpm` workspace;
+- `apps/api` Django application with Django Ninja, configuration validation,
+  and health/readiness endpoints;
+- `apps/worker` Python Worker entrypoint or Django management command with
+  graceful startup and shutdown, but no Job lease loop;
 - `apps/control` Next.js shell with API health display and loading/error state;
-- shared package boundaries defined in `NESTJS_MONOREPO_ARCHITECTURE.md`;
-- TypeORM DataSource configuration, a migration command path, and an initial
-  migration proving PostgreSQL connectivity;
-- `.env.example`, local Compose configuration for PostgreSQL, root scripts,
-  lint/type-check/test/build baseline, and CI checks;
+- boundaries defined in `DJANGO_NEXT_PLATFORM_ARCHITECTURE.md`;
+- Django database settings, migration command path, and an initial migration
+  proving PostgreSQL connectivity;
+- `.env.example`, local Compose configuration for PostgreSQL, root commands,
+  lint/type-check/test/build-control baseline, and CI checks;
 - generated OpenAPI for the health surface and a checked contract artifact.
 
 ### 9.2 A1 Explicit Exclusions
@@ -229,7 +224,7 @@ A1 does not include:
 
 A1 may begin only when:
 
-1. `ADO_MASTER_SPEC.md`, `NESTJS_MONOREPO_ARCHITECTURE.md`,
+1. `ADO_MASTER_SPEC.md`, `DJANGO_NEXT_PLATFORM_ARCHITECTURE.md`,
    `CONTROL_ROOM_API_UI_SPEC.md`, and this protocol are approved as the current
    implementation baseline;
 2. the Human Owner has protected the Spec Library and created `main` and
@@ -246,13 +241,14 @@ A1 may begin only when:
 
 A1 is complete only when a clean checkout can demonstrate all of the following:
 
-1. `pnpm install`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build`
-   succeed using documented local prerequisites;
+1. `uv sync`, frontend dependency install, `make lint`, `make typecheck`,
+   `make test`, and `make build-control` succeed using documented local
+   prerequisites;
 2. a local PostgreSQL instance receives the initial reviewed migration and
-   `pnpm db:migration:show` accurately reports it;
+   `make db-plan` or equivalent migration status command accurately reports it;
 3. the API fails before listening when required configuration is invalid and
    reports health/readiness without exposing secrets when valid;
-4. the standalone Worker starts, connects to the intended non-production
+4. the Python Worker starts, connects to the intended non-production
    database, records no false job execution, and shuts down gracefully;
 5. the Control app shows API health, loading, unavailable, and recovered
    states through the API rather than a database connection;

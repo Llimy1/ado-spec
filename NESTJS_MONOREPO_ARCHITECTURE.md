@@ -1,10 +1,15 @@
-# ADO NestJS Monorepo Architecture
+# Deprecated: ADO NestJS Monorepo Architecture
 
-This document is the canonical implementation architecture for ADO v1. It is
-implemented in the separate `ado-platform` repository, not in the ADO Spec
-Library repository that contains this document.
+> Historical implementation architecture only. `DJANGO_NEXT_PLATFORM_ARCHITECTURE.md`
+> is the canonical implementation architecture for new ADO v1 platform work.
+> This file remains as migration history for the earlier NestJS/TypeORM
+> direction and must not be used to create new ADO platform code, commands, or
+> tests.
 
-It supersedes the Django implementation assumptions in older documents.
+This document described the earlier NestJS implementation architecture for ADO
+v1. It was implemented in the separate `ado-platform` repository, not in the
+ADO Spec Library repository that contains this document.
+
 ADO remains a PostgreSQL-centered control system: changing framework does not
 change the DB single source of truth, state-machine authority, artifact
 lineage, outbox, Git safety, or human final authority.

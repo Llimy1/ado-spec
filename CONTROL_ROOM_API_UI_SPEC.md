@@ -1,7 +1,8 @@
 # ADO Control Room API And UI Specification
 
 This document defines the v1 control plane for Agent Development Orchestrator
-(ADO). It applies to `apps/api` and `apps/control` in the NestJS monorepo.
+(ADO). It applies to `apps/api` and `apps/control` in the Django + Next
+monorepo.
 
 Its visual, responsive, interaction, and accessibility token contract is
 defined by `CONTROL_ROOM_DESIGN_SYSTEM.md`. That design system applies only to
@@ -221,10 +222,11 @@ relevant policy/evidence result when authorized.
 
 ## 6. OpenAPI Contract
 
-`apps/api` generates the authoritative OpenAPI document from validated NestJS
-controllers and DTOs during CI. The document is versioned with the API and
-published as a build artifact. `packages/contracts` owns shared transport types
-and is regenerated or checked against the OpenAPI document in CI.
+`apps/api` generates the authoritative OpenAPI document from validated Django
+Ninja routers and schemas during CI. The document is versioned with the API and
+published as a build artifact. `packages/contracts` owns generated TypeScript
+transport clients and checked schema artifacts, and is regenerated or checked
+against the OpenAPI document in CI.
 
 Breaking changes require a new `/v2` or an explicitly approved compatibility
 plan. The control app consumes generated types or a checked client, not copied

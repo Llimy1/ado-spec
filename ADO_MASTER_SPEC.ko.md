@@ -30,9 +30,9 @@ ADO는 특정 서비스 하나만을 위한 자동화가 아니다. 여러 프�
 
 핵심 목표는 긴 대화를 계속 들고 가는 것이 아니라, 사람의 로드맵을 작고 검증 가능한 작업 단위로 나누고, 각 단위의 설계/구현/검증/리뷰/PR 생성을 추적 가능하게 자동화하는 것이다.
 
-ADO의 공통 규약은 별도 ADO Spec Library 저장소에 있고, 실제 NestJS
-애플리케이션은 별도 `ado-platform` 저장소에 있다. Platform은 승인된 불변
-Spec Library revision만 고정해 실행한다. 경계와 revision 규칙은
+ADO의 공통 규약은 별도 ADO Spec Library 저장소에 있고, 실제 Django + Next
+플랫폼은 별도 `ado-platform` 저장소에 있다. Platform은 승인된 불변 Spec
+Library revision만 고정해 실행한다. 경계와 revision 규칙은
 `SPEC_LIBRARY_PLATFORM_BOUNDARY.md`를 따른다.
 
 ## 1. 기본 계층
@@ -78,7 +78,7 @@ stale 또는 quarantined artifact는 Agent 입력이나 완료 근거로 사용�
 ADO는 역할을 강하게 분리한다.
 
 - `Human Owner`: 최종 승인자, 최종 merge 권한자.
-- `Nest API + Next Control`: REST/OpenAPI/SSE 기반 상태 확인, 승인, 검증 관제면.
+- `Django API + Next Control`: REST/OpenAPI/SSE 기반 상태 확인, 승인, 검증 관제면.
 - `Worker`: 실제 Job 실행자.
 - `Policy Engine`: 정책/권한/안전성 판단.
 - `State Machine`: 상태 전환을 실제로 적용하는 유일한 계층.
@@ -299,7 +299,7 @@ ADO 구현 제약
 ADO 구현 제약은 ADO 자체를 어떤 코드 구조와 아키텍처로 만들지 정의한다.
 
 - `CODING_STANDARDS.md`
-- `NESTJS_MONOREPO_ARCHITECTURE.md`
+- `DJANGO_NEXT_PLATFORM_ARCHITECTURE.md`
 - `CONTROL_ROOM_API_UI_SPEC.md`
 - `CONTROL_ROOM_DESIGN_SYSTEM.md`
 - `DESIGN_SYSTEM_REFERENCE_BENCHMARK.md`
@@ -351,7 +351,7 @@ ADO 공통 제약은 안정적으로 유지하고, 서비스 제약은 Project�
 v1-alpha Worker 구조:
 
 ```text
-NestJS standalone Worker + PostgreSQL DB queue
+Python Worker + PostgreSQL DB queue
 ```
 
 v1-stable에서는 Job, JobAttempt, JobOutboxEvent, StateMachine, Audit 계약을
@@ -511,7 +511,7 @@ ADO는 merge하지 않는다.
 
 ## 17. UI
 
-DB inspection 도구는 관제실이 아니다. Next.js Control은 Nest REST/OpenAPI/SSE
+DB inspection 도구는 관제실이 아니다. Next.js Control은 Django REST/OpenAPI/SSE
 경계만 사용하며 DB를 직접 수정하지 않는다.
 
 Custom UI는 관제실이다.
@@ -563,12 +563,12 @@ Incident가 열리면 관련 자동화는 pause된다.
 
 Feature Units:
 
-- FU-A1 NestJS monorepo/PostgreSQL bootstrap
+- FU-A1 Django + Next monorepo/PostgreSQL bootstrap
 - FU-A2 Core DB models
 - FU-A3 State Machine / Policy Engine
 - FU-A4 DB Job Queue + Worker
 - FU-A5 ArtifactStore + Markdown generation
-- FU-A6 Next.js Control Room + Nest API operational slice
+- FU-A6 Next.js Control Room + Django API operational slice
 
 ### v1-beta
 

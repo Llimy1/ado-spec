@@ -7,7 +7,7 @@ This document defines practical runtime defaults for ADO v1.
 v1-alpha:
 
 ```text
-NestJS standalone Worker process
+Python Worker process
 PostgreSQL DB queue
 single worker by default
 ADO-managed filesystem under ADO_DATA_DIR

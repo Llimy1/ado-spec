@@ -12,7 +12,7 @@ agent claims are true and it does not mutate business state directly.
 v1-alpha runtime:
 
 ```text
-NestJS standalone application context
+Python Worker process
 -> PostgreSQL Job queue
 -> one Worker process / one concurrent Job by default
 -> ADO-managed local filesystem and POSIX child processes
@@ -90,7 +90,7 @@ startup failure, not a side effect it repairs itself.
 The main entry point is:
 
 ```text
-pnpm --filter @ado/worker start -- --worker-id <unique-key>
+uv run python manage.py ado_worker --worker-id <unique-key>
 ```
 
 Required behavior and options:
@@ -150,7 +150,7 @@ A Job is eligible only if all are true:
 
 ### 6.2 Atomic Lease
 
-`lease_next_job` runs in one short TypeORM `QueryRunner` transaction:
+`lease_next_job` runs in one short Django `transaction.atomic()` block:
 
 1. select the deterministic highest-priority eligible Job using
    `SELECT ... FOR UPDATE SKIP LOCKED`;
