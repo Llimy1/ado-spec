@@ -195,14 +195,14 @@ ordinary Job types.
 
 | Item | Contract |
 |---|---|
-| Release gate | v1-stable, human-mediated only. |
-| Target | imported external Artifact. |
-| Input | human-provided response, external transfer linkage, import schema. |
-| Runner | ClaudeImportHandler, no Claude SDK/API call. |
-| Evidence | CandidateArtifact, source linkage, validation/redaction result, HumanDecision if promoted. |
+| Release gate | v1-stable, human-started Agent Ingest only. |
+| Target | AgentIngestRun / imported external Artifact. |
+| Input | Ingest API submitted response, external transfer linkage, ingest/import schema. |
+| Runner | ClaudeImportHandler, no Claude SDK/API/MCP call. |
+| Evidence | raw CandidateArtifact, structured AgentIngestResult, source linkage, validation/redaction result, HumanDecision if promoted or required. |
 | Timeout/retry | 30s, no automatic retry. |
 | Negative result | malformed/sensitive response -> rejected/quarantined. |
-| Reconcile | content hash and transfer event prevent duplicate import. |
+| Reconcile | run id, idempotency key, content hash, and transfer event prevent duplicate import. |
 
 ## 6. Handler Failure Matrix
 

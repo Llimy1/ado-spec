@@ -3,6 +3,10 @@
 This document defines the v1 control plane for Agent Development Orchestrator
 (ADO). It applies to `apps/api` and `apps/control` in the NestJS monorepo.
 
+Its visual, responsive, interaction, and accessibility token contract is
+defined by `CONTROL_ROOM_DESIGN_SYSTEM.md`. That design system applies only to
+the ADO Control Room, never to managed Project products.
+
 The control room makes the database-backed orchestration system observable and
 human-operable. It is not an alternate source of truth, an agent shell, or a
 database administration console.
@@ -54,6 +58,7 @@ system health, live-connection state, and the current authenticated operator.
 | Roadmap / Feature Unit | What is the approved functional goal and its dependency state? | source roadmap, scope, acceptance criteria, dependency graph, approval history, linked Component Work |
 | Component Work | What implementation unit is executing and on which branch? | component root, allowed paths, branch/worktree, state timeline, jobs, verification, reviews, PR |
 | Run Detail | What happened during this execution? | immutable attempt summary, timestamps, runner identity, redacted logs, artifacts, exit/timeout result, retry history |
+| Agent Inbox / Claude Runs | What external agent result arrived and what will ADO do next? | ingest run status, raw response, structured parse, validation result, risks, questions, created Codex jobs |
 | Review And Verification | Is the work ready for a PR and human verification? | deterministic verification evidence, local reviewer findings, arbiter result, resolution history, human checklist |
 | Incidents | What requires recovery or a decision? | incident record, severity, affected subjects, recovery actions, audit timeline |
 
@@ -106,24 +111,43 @@ data detection.
 ### 5.1 Read Endpoints
 
 Read endpoints are side-effect free and cursor-paginate unbounded collections.
+Keys are not assumed globally unique unless the database contract says they are.
+`project_key` is global; `roadmap_key` is unique within a Project;
+`feature_unit_key` is unique within a Roadmap; `component_work_key` is unique
+within a Feature Unit. Routes for those human-readable keys are therefore
+hierarchical. Resources that have no globally unique human key use their UUID
+with an `{resourceId}` parameter. A route never treats a locally unique key as
+a global identifier.
+
 Representative endpoint families are:
 
 ```text
 GET /v1/projects
+GET /v1/events
 GET /v1/projects/{projectKey}
+GET /v1/projects/{projectKey}/roadmaps
 GET /v1/projects/{projectKey}/overview
 GET /v1/projects/{projectKey}/roadmaps/{roadmapKey}
-GET /v1/feature-units/{featureUnitKey}
-GET /v1/component-works/{componentWorkKey}
-GET /v1/jobs/{jobKey}
-GET /v1/jobs/{jobKey}/attempts
-GET /v1/agent-runs/{agentRunKey}
-GET /v1/verification-runs/{verificationRunKey}
-GET /v1/review-groups/{reviewGroupKey}
-GET /v1/pull-requests/{pullRequestKey}
+GET /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units
+GET /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}
+GET /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/human-verification
+GET /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}
+GET /v1/projects/{projectKey}/jobs/{jobKey}
+GET /v1/projects/{projectKey}/jobs/{jobKey}/attempts
+GET /v1/job-attempts/{jobAttemptId}
+GET /v1/agent-runs/{agentRunId}
+GET /v1/agent-ingest/runs
+GET /v1/agent-ingest/runs/{agentIngestRunId}
+GET /v1/verification-runs/{verificationRunId}
+GET /v1/review-groups/{reviewGroupId}
+GET /v1/pull-requests/{pullRequestId}
 GET /v1/incidents
-GET /v1/artifacts/{artifactKey}
-GET /v1/logs?attemptKey={attemptKey}&cursor={cursor}
+GET /v1/decisions
+GET /v1/projects/{projectKey}/incidents/{incidentKey}
+GET /v1/projects/{projectKey}/decisions
+GET /v1/projects/{projectKey}/decisions/{decisionKey}
+GET /v1/projects/{projectKey}/artifacts/{artifactKey}
+GET /v1/logs?attemptId={jobAttemptId}&cursor={cursor}
 GET /v1/health
 ```
 
@@ -139,22 +163,42 @@ Job or TransitionRequest reference; it never holds an HTTP connection until a
 runner finishes.
 
 ```text
-POST /v1/feature-units/{featureUnitKey}/commands/request-approval
-POST /v1/feature-units/{featureUnitKey}/commands/record-human-decision
-POST /v1/component-works/{componentWorkKey}/commands/pause
-POST /v1/component-works/{componentWorkKey}/commands/resume
-POST /v1/component-works/{componentWorkKey}/commands/retry
-POST /v1/component-works/{componentWorkKey}/commands/cancel
-POST /v1/component-works/{componentWorkKey}/commands/request-pr
-POST /v1/human-verification-items/{itemKey}/commands/record-result
-POST /v1/incidents/{incidentKey}/commands/acknowledge
-POST /v1/incidents/{incidentKey}/commands/request-recovery
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/commands/record-human-decision
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/commands/record-human-decision
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/commands/record-human-verification-decision
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}/commands/pause
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}/commands/resume
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}/commands/retry
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}/commands/cancel
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}/commands/request-pr
+POST /v1/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/human-verification-items/{itemKey}/commands/record-result
+POST /v1/projects/{projectKey}/incidents/{incidentKey}/commands/acknowledge
+POST /v1/projects/{projectKey}/incidents/{incidentKey}/commands/request-recovery
 ```
 
 The API never offers `POST /state`, bulk update, arbitrary retry, arbitrary
 shell, direct document overwrite, or merge endpoints.
 
-### 5.3 Response And Error Semantics
+### 5.3 Agent Ingest Endpoint
+
+Agent Ingest is a scoped external-agent submit surface, not a browser command.
+It is defined by `AGENT_INGEST_PROTOCOL.md`.
+
+```text
+POST /v1/agent-ingest/runs/{agentIngestRunId}/result
+```
+
+The endpoint uses a one-time or short-lived bearer submit token and an
+`Idempotency-Key`. It does not use a Human Owner session cookie. A successful
+request means an external agent result has been produced and submitted. The
+API stores raw and structured artifacts, validates them, audits the event, and
+creates follow-up Jobs when policy allows.
+
+The Control Room reads ingest runs through REST and displays raw response
+metadata, redacted content, structured parse, validation failures, policy
+decision, and linked follow-up Jobs. Raw responses are not sent through SSE.
+
+### 5.4 Response And Error Semantics
 
 Use these response classes consistently:
 
@@ -188,18 +232,36 @@ handwritten request/response interfaces.
 
 ## 7. SSE Contract
 
-The API exposes one authenticated, project-scoped stream:
+The API exposes two authenticated, read-only streams:
 
 ```text
+GET /v1/events
 GET /v1/projects/{projectKey}/events
 ```
+
+`GET /v1/events` is the Human Owner's global Control Room stream. It exists so
+the Projects list and the Human Decision Inbox can receive attention-level
+freshness signals across Projects. It emits only these summary event types:
+
+```text
+project.attention.changed
+project.archived.changed
+human_decision.required
+incident.updated
+```
+
+It never contains log content, artifact content, provider payloads, command
+arguments, or per-run output. `GET /v1/projects/{projectKey}/events` remains
+the detailed stream for one authorized Project and may emit the broader event
+set defined below. Both streams are hints; their associated REST snapshots are
+authoritative.
 
 The event envelope is transport-safe and contains no secret or raw payload:
 
 ```json
 {
   "id": "evt_...",
-  "type": "state.transitioned",
+  "type": "project.attention.changed",
   "occurredAt": "2026-06-22T12:00:00Z",
   "projectKey": "ado",
   "traceId": "trc_...",
@@ -213,10 +275,15 @@ Allowed event types are:
 
 ```text
 state.transitioned
+project.attention.changed
+project.archived.changed
 job.attempt.updated
 worker.updated
 log.available
 artifact.available
+agent_ingest.result_submitted
+agent_ingest.validation_completed
+agent_ingest.follow_up_created
 verification.completed
 review.finding.created
 pull_request.updated

@@ -22,8 +22,12 @@ generated_from_db: false
 
 ## Components
 
-| Key | Type | Repository | Path Scope | Verification Profile |
-|---|---|---|---|---|
+Layout Profile:
+
+- `standard_product_monorepo`
+
+| Key | Type | Repository | Root Path | Internal Structure Profile | Verification Profile |
+|---|---|---|---|---|---|
 
 ## ADO Spec Library Revision
 
@@ -40,6 +44,10 @@ generated_from_db: false
 - Profile Version:
 - Status:
 - Design Constraints:
+- Project Design System:
+- Screen Catalogs:
+- Responsive Matrices:
+- UI Acceptance Checklists:
 - Architecture Constraints:
 - Verification Profile:
 - Human Approval:

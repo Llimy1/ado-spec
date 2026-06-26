@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ADO Agent Ingest Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "agent_ingest_run_id",
+    "agent_kind",
+    "status",
+    "result_type",
+    "content_markdown",
+    "structured",
+    "artifacts",
+    "failure"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "minLength": 1 },
+    "agent_ingest_run_id": { "type": "string", "minLength": 1 },
+    "agent_kind": {
+      "enum": ["claude_code", "external_advisor"]
+    },
+    "status": {
+      "enum": ["completed", "needs_human_review", "failed"]
+    },
+    "result_type": {
+      "enum": [
+        "planning_review",
+        "design_review",
+        "implementation_advice",
+        "review_feedback",
+        "question_answer",
+        "risk_assessment",
+        "human_checklist"
+      ]
+    },
+    "content_markdown": { "type": "string", "minLength": 1 },
+    "structured": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary",
+        "questions",
+        "risks",
+        "policy_issues",
+        "recommendations",
+        "human_checklist",
+        "recommended_codex_action",
+        "requires_human_decision"
+      ],
+      "properties": {
+        "summary": { "type": "string" },
+        "questions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "risks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["severity", "title", "detail"],
+            "properties": {
+              "severity": {
+                "enum": ["low", "medium", "high", "critical"]
+              },
+              "title": { "type": "string" },
+              "detail": { "type": "string" }
+            }
+          }
+        },
+        "policy_issues": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "recommendations": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "human_checklist": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "recommended_codex_action": {
+          "enum": [
+            "none",
+            "plan_feature_units",
+            "create_component_work_jobs",
+            "implement",
+            "apply_review_feedback",
+            "answer_design_gap",
+            "request_human_decision"
+          ]
+        },
+        "requires_human_decision": { "type": "boolean" }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["artifact_key", "artifact_type", "description"],
+        "properties": {
+          "artifact_key": { "type": "string" },
+          "artifact_type": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "failure": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": [
+        "failure_type",
+        "failure_summary",
+        "retryable",
+        "requires_human"
+      ],
+      "properties": {
+        "failure_type": {
+          "enum": [
+            "process_error",
+            "timeout",
+            "schema_validation_failed",
+            "model_refusal",
+            "model_unclear",
+            "tool_error",
+            "command_failed",
+            "policy_denied",
+            "safety_violation",
+            "auth_required",
+            "external_service_failed",
+            "human_input_required",
+            "unknown"
+          ]
+        },
+        "failure_summary": { "type": "string" },
+        "retryable": { "type": "boolean" },
+        "requires_human": { "type": "boolean" }
+      }
+    }
+  }
+}

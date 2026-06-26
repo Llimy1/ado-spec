@@ -301,6 +301,10 @@ ADO 구현 제약은 ADO 자체를 어떤 코드 구조와 아키텍처로 만�
 - `CODING_STANDARDS.md`
 - `NESTJS_MONOREPO_ARCHITECTURE.md`
 - `CONTROL_ROOM_API_UI_SPEC.md`
+- `CONTROL_ROOM_DESIGN_SYSTEM.md`
+- `DESIGN_SYSTEM_REFERENCE_BENCHMARK.md`
+- `CONTROL_ROOM_DESIGN_TOKENS.md`
+- `CONTROL_ROOM_COMPONENT_SPECS.md`
 - `BOOTSTRAP_PROTOCOL.md`
 - `SPEC_LIBRARY_PLATFORM_BOUNDARY.md`
 - `MANAGED_PROJECT_MONOREPO_POLICY.md`
@@ -311,11 +315,21 @@ ADO 구현 제약은 ADO 자체를 어떤 코드 구조와 아키텍처로 만�
 
 즉 ADO 자체의 제약과, ADO가 만들 대상 서비스의 제약은 섞지 않는다.
 
+ADO 관제실 디자인 시스템과 각 관리 Project의 디자인 시스템은 서로 다른
+제품 규약이다. 서로의 색상, 폰트, 컴포넌트, 레이아웃을 상속하지 않는다.
+접근성, 반응형 무결성, 명시적 상태, 오류/복구 동작, 증거 기반 UI 검증만
+공통 품질 하한선으로 적용한다.
+
 프로젝트별 제약은 사람이 답변한 questionnaire와 human-approved ProjectConstraintProfile에서 생성된다.
 
 - `PROJECT_CONSTRAINT_GENERATION.md`
+- `PROJECT_DESIGN_GOVERNANCE.md`
 - `SERVICE_CONSTRAINT_QUESTIONNAIRE.md`
 - `templates/PROJECT_DESIGN_CONSTRAINTS_TEMPLATE.md`
+- `templates/PROJECT_DESIGN_SYSTEM_TEMPLATE.md`
+- `templates/SCREEN_CATALOG_TEMPLATE.md`
+- `templates/RESPONSIVE_MATRIX_TEMPLATE.md`
+- `templates/UI_ACCEPTANCE_CHECKLIST_TEMPLATE.md`
 - `templates/PROJECT_ARCHITECTURE_TEMPLATE.md`
 - `templates/PROJECT_VERIFICATION_PROFILE_TEMPLATE.md`
 - `schemas/project_constraint_profile.schema.json`

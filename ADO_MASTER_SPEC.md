@@ -127,6 +127,7 @@ Policy/state constraints are defined in:
 - `POLICY_STATE_CONSTRAINTS.md`
 - `STATE_TRANSITION_RULES.md`
 - `EVIDENCE_GATES.md`
+- `AGENT_INGEST_PROTOCOL.md`
 
 ## 7. Core Data Model
 
@@ -217,19 +218,35 @@ ADO implementation constraints define how this orchestration system is built. Th
 - `CODING_STANDARDS.md`
 - `NESTJS_MONOREPO_ARCHITECTURE.md`
 - `CONTROL_ROOM_API_UI_SPEC.md`
+- `CONTROL_ROOM_DESIGN_SYSTEM.md`
+- `DESIGN_SYSTEM_REFERENCE_BENCHMARK.md`
+- `CONTROL_ROOM_DESIGN_TOKENS.md`
+- `CONTROL_ROOM_COMPONENT_SPECS.md`
 - `BOOTSTRAP_PROTOCOL.md`
 - `SPEC_LIBRARY_PLATFORM_BOUNDARY.md`
 - `MANAGED_PROJECT_MONOREPO_POLICY.md`
+- `MANAGED_PROJECT_FILE_STRUCTURE_POLICY.md`
 - `SERVICE_LAYER_RULES.md`
 - `TESTING_STRATEGY.md`
 
 Project/service constraints define how each target product should be designed, implemented, and verified. They are generated per Project from a human-approved ProjectConstraintProfile.
 
+The ADO Control Room design system and every managed Project design system are
+separate products. They do not visually inherit from one another. Only the
+shared quality baseline (accessibility, responsive integrity, explicit state,
+error/recovery behavior, and evidence-based UI verification) applies to both.
+
 Project constraint generation is defined in:
 
 - `PROJECT_CONSTRAINT_GENERATION.md`
+- `PROJECT_DESIGN_GOVERNANCE.md`
+- `MANAGED_PROJECT_FILE_STRUCTURE_POLICY.md`
 - `SERVICE_CONSTRAINT_QUESTIONNAIRE.md`
 - `templates/PROJECT_DESIGN_CONSTRAINTS_TEMPLATE.md`
+- `templates/PROJECT_DESIGN_SYSTEM_TEMPLATE.md`
+- `templates/SCREEN_CATALOG_TEMPLATE.md`
+- `templates/RESPONSIVE_MATRIX_TEMPLATE.md`
+- `templates/UI_ACCEPTANCE_CHECKLIST_TEMPLATE.md`
 - `templates/PROJECT_ARCHITECTURE_TEMPLATE.md`
 - `templates/PROJECT_VERIFICATION_PROFILE_TEMPLATE.md`
 - `schemas/project_constraint_profile.schema.json`
@@ -324,21 +341,31 @@ AGENTS.md contains short execution rules only. Long context lives in ContextPack
 
 ## 13. Claude Interactive
 
-Claude is v1 human-mediated, not an automatic agent.
+Claude is v1 human-started, not an automatically executed SDK/MCP agent.
+Claude Code may submit its result directly to ADO through the scoped Agent
+Ingest API. It never receives database credentials and never writes DB rows
+directly.
 
 Flow:
 
 ```text
 ADO exports external-safe packet
 -> human pastes into Claude
--> human imports Claude response
--> ADO stores CandidateArtifact
--> human promotes/rejects
+-> Claude Code posts result to ADO Ingest API
+-> ADO stores raw and structured artifacts
+-> ADO validates result and creates follow-up Job when policy allows
+-> Worker leases the Job and runs Codex
 ```
 
 Claude responses are candidate artifacts, not state-transition evidence.
 
-Claude SDK, Claude MCP automatic integration, and callback import endpoints are excluded from v1.
+The canonical ingest contract is defined in:
+
+- `AGENT_INGEST_PROTOCOL.md`
+- `schemas/agent_ingest_result.schema.json`
+- `schemas/claude_import_output.schema.json`
+
+Claude SDK and Claude MCP automatic integration are excluded from v1.
 
 ## 14. Local Review Council
 
@@ -494,6 +521,7 @@ Feature Units:
 - full visual regression platform
 - automatic dependency upgrade
 - automatic GitHub review comment resolve
+- direct database writes from external agents
 
 ## 21. Success Definition
 

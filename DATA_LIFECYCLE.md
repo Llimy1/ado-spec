@@ -99,13 +99,18 @@ tokens, or raw response headers are not stored.
 ### 4.1 Project Constraint Profile
 
 ```text
-draft -> review_ready -> approved -> active -> superseded | archived
+draft -> ready_for_human_review -> approved -> active -> superseded | archived
+draft -> ready_for_human_review -> rejected
 ```
 
 Only a human-approved profile can become active. Existing approved Feature
 Units and Component Works retain their bound profile version. Rebinding an
 active work item requires a HumanDecision and creates an audit event because it
 changes execution context.
+
+`rejected` is a terminal draft-review outcome. A rejected profile version is
+not reused for later approval; a corrected profile creates a new version or a
+new draft record according to the Project configuration service.
 
 ### 4.2 Roadmap To Component Work
 

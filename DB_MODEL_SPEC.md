@@ -98,15 +98,17 @@ run. Historical records retain their foreign key to it.
 
 | Field | Type | Notes |
 |---|---|---|
-| `actor_type` | enum | `human`, `system`, `worker`, `codex`, `local_model`, `claude_import`, `github`, `unknown`. |
+| `actor_type` | enum | `human`, `system`, `state_machine`, `policy_engine`, `evidence_gate`, `worker`, `codex`, `local_model`, `claude_import`, `github`, `unknown`. |
 | `actor_key` | varchar | Stable non-secret key, unique with `actor_type`. |
 | `user_account_id` | FK `auth.UserAccount`, nullable | Required for `human`; null for non-human actors. |
 | `display_name` | varchar | Presentation only. |
 | `is_active` | boolean | Inactive actors cannot initiate new work. |
 
 Unique constraint: `(actor_type, actor_key)`. A `human` actor must have a
-`user_account_id`; a non-human actor must not. Enforce this with a check
-constraint.
+`user_account_id`; a non-human actor must not. `state_machine`,
+`policy_engine`, and `evidence_gate` are registered system actors with their
+own actor types so state, policy, and evidence records can prove which engine
+applied or checked them. Enforce this with check constraints.
 
 Every table below records scope using real foreign keys whenever the target is
 known. ADO deliberately does not use polymorphic ORM relations for critical
@@ -391,6 +393,23 @@ created; a packet cannot be `external_safe=true` unless redaction passed.
 `verification_run_id`, `effective_spec_library_revision_id`,
 `spec_manifest_sha256`, `review_scope_json`, and `expires_at`.
 
+### 7.4 `integrations.AgentIngestRun`
+
+`AgentIngestRun` records a human-started external agent session that may submit
+its result through ADO Ingest API. It is stateful and auditable; it is not a
+direct execution attempt owned by Worker.
+
+Fields: `project_id`, `agent_ingest_run_key`, `agent_kind`,
+`target_state_subject_id`, `source_packet_artifact_id`, `expected_result_type`,
+`submit_token_hash`, `submit_token_expires_at`, `idempotency_key`,
+`raw_result_artifact_id` nullable, `structured_result_artifact_id` nullable,
+`validation_result_artifact_id` nullable, `created_follow_up_job_id` nullable,
+`status_subject_id`, `created_by_actor_id`, `submitted_at`, and `expires_at`.
+
+Unique constraints: `(project_id, agent_ingest_run_key)` and
+`(project_id, idempotency_key)`. The submit token is stored only as a hash. The
+raw token is never stored, logged, or returned after packet issuance.
+
 ## 8. Execution And Verification Tables
 
 ### 8.1 `execution.Job`
@@ -634,6 +653,8 @@ create/bind action; direct model saves are insufficient:
   profile, and effective SpecLibraryRevision/manifest hash.
 - `Artifact` evidence is `valid`, non-stale, non-quarantined, and has an
   allowed classification before entering an EvidenceGateResult.
+- `AgentIngestRun` target, source packet, raw result, structured result, and
+  follow-up Job all belong to the same Project and expected result type.
 - HumanDecision and ManualOverride actors are human actors.
 - A StateTransition uses an allowed StateMachine actor, allowed PolicyDecision,
   passed EvidenceGateResult, and the requested target/current status.

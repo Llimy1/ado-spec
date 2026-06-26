@@ -33,10 +33,15 @@ Create a project spec with:
 - project key
 - product/service name
 - one public monorepo repository (required in v1)
+- selected managed Project file structure profile
 - components
 - environments
 - project constraint profile
 - design constraints
+- project design system
+- screen catalog for UI-bearing components
+- responsive matrix for UI-bearing components
+- UI acceptance checklist for UI-bearing component work
 - architecture constraints
 - verification profile
 - protected branches
@@ -45,7 +50,10 @@ Create a project spec with:
 - safety policy
 - budget policy
 
-Project constraints are created from `SERVICE_CONSTRAINT_QUESTIONNAIRE.md` and approved by a human before execution.
+Project constraints are created from `SERVICE_CONSTRAINT_QUESTIONNAIRE.md` and
+approved by a human before execution. UI-bearing Projects additionally generate
+the design artifacts defined in `PROJECT_DESIGN_GOVERNANCE.md` from the design
+templates in `templates/`.
 The Project binds one approved SpecLibraryRevision before its first packet is
 generated. A later upgrade is a new human-approved Project configuration
 revision; it does not alter prior Feature Units, packets, runs, or PR evidence.
@@ -64,6 +72,9 @@ Human approval is required before execution.
 
 ## 4. Define Components
 
+The default file structure profile is `standard_product_monorepo` from
+`MANAGED_PROJECT_FILE_STRUCTURE_POLICY.md`.
+
 Typical component types:
 
 - app
@@ -76,8 +87,11 @@ Typical component types:
 - research
 
 Each component maps to a root in the one Project repository and to a
-verification profile. Multiple component roots in the same repository are the
-normal Project shape.
+verification profile. Each component also declares an internal structure
+profile such as `nextjs_feature_app`, `expo_feature_app`,
+`nestjs_module_api`, `pure_shared_package`, `project_ui_package`, or
+`transport_contract_package`. Multiple component roots in the same repository
+are the normal Project shape.
 
 Each component also inherits relevant project constraints. For example, a web component receives web design and frontend architecture constraints, while a server component receives API, data, and backend verification constraints.
 
@@ -154,6 +168,9 @@ For a new project:
 2. Answer Service Constraint Questionnaire.
 3. Generate ProjectConstraintProfile.
 4. Generate project design, architecture, and verification documents.
+   UI-bearing Projects include `PROJECT_DESIGN_CONSTRAINTS.md`,
+   `PROJECT_DESIGN_SYSTEM.md`, `SCREEN_CATALOG.md`,
+   `RESPONSIVE_MATRIX.md`, and `UI_ACCEPTANCE_CHECKLIST.md`.
 5. Human approves ProjectConstraintProfile.
 6. Register repositories and components.
 7. Import roadmap.

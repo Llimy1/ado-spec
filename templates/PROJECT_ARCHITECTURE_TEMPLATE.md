@@ -15,9 +15,62 @@ generated_at: "{{generated_at}}"
 
 ## 1. Component Map
 
-| Component Key | Type | Repository | Root Path | Runtime | Owner |
-| --- | --- | --- | --- | --- | --- |
-|  |  |  |  |  |  |
+Layout profile:
+
+```text
+standard_product_monorepo
+```
+
+| Component Key | Type | Repository | Root Path | Internal Structure Profile | Runtime | Owner |
+| --- | --- | --- | --- | --- | --- | --- |
+|  |  |  |  |  |  |  |
+
+## 1.1 Repository Layout
+
+Approved root layout:
+
+```text
+apps/
+packages/
+docs/
+assets/
+infra/
+tools/
+tests/
+.ado/
+```
+
+Omitted default roots:
+
+-
+
+Custom roots:
+
+-
+
+Generated paths:
+
+- `.ado/generated/`
+- `.ado/packets/`
+- `.ado/reports/`
+
+Human-authored documentation paths:
+
+- `docs/product/`
+- `docs/architecture/`
+- `docs/verification/`
+- `docs/decisions/`
+
+## 1.2 Component Internal Structure
+
+| Component Key | Internal Structure Profile | Required Directories | Notes |
+| --- | --- | --- | --- |
+| web | nextjs_feature_app | `src/app`, `src/features`, `src/components`, `src/lib` |  |
+| mobile | expo_feature_app | `src/app` or `src/screens`, `src/features`, `src/components`, `src/lib` |  |
+| api | nestjs_module_api | `src/modules`, `src/common`, `src/config`, `src/database` |  |
+| shared | pure_shared_package | `src/domain`, `src/utils`, `src/validation`, `src/types` |  |
+| ui | project_ui_package | `src/components`, `src/primitives`, `src/tokens`, `src/styles` |  |
+| contracts | transport_contract_package | `src/api`, `src/events`, `src/schemas` |  |
 
 ## 2. Repository Rules
 
@@ -27,6 +80,8 @@ generated_at: "{{generated_at}}"
 - PR target:
 - Forbidden paths:
 - Human approval required paths:
+- Generated paths:
+- ADO-managed paths:
 
 ## 3. Frontend Architecture
 

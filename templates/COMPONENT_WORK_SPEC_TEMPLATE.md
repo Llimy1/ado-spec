@@ -43,6 +43,17 @@ unverifiable or unsafe partial state.
 
 ## Component Contract
 
+## UI Design Contract
+
+Required when any scoped Component is UI-bearing.
+
+- Project Design System:
+- Design Contract Version:
+- Relevant Screens:
+- Responsive Matrix:
+- UI Acceptance Checklist:
+- Known Design Exceptions:
+
 ## Verification Profile
 
 ## Expected Changes

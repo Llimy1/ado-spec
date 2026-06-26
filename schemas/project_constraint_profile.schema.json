@@ -27,7 +27,7 @@
     },
     "status": {
       "type": "string",
-      "enum": ["draft", "ready_for_human_review", "approved", "rejected", "superseded"]
+      "enum": ["draft", "ready_for_human_review", "approved", "active", "superseded", "archived", "rejected"]
     },
     "identity": {
       "type": "object",
