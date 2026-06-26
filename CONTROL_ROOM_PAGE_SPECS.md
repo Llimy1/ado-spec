@@ -2257,27 +2257,10 @@ packages/contracts/src/system/system-health.contract.ts
 
 ### P-11.1 Canonical Route Registry
 
-```text
-/projects
-/projects/{projectKey}
-/projects/{projectKey}/roadmaps
-/projects/{projectKey}/roadmaps/{roadmapKey}
-/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}
-/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/component-works/{componentWorkKey}
-/runs/{jobAttemptId}
-/verification-runs/{verificationRunId}
-/reviews/{reviewGroupId}
-/pull-requests/{pullRequestId}
-/projects/{projectKey}/roadmaps/{roadmapKey}/feature-units/{featureUnitKey}/human-verification
-/decisions
-/projects/{projectKey}/decisions
-/projects/{projectKey}/decisions/{decisionKey}
-/incidents
-/projects/{projectKey}/incidents/{incidentKey}
-/projects/{projectKey}/artifacts/{artifactKey}
-/system
-/settings
-```
+The canonical route list, command classification, delivery slice mapping, and
+future page-detail-spec filenames are defined in
+`CONTROL_ROOM_ROUTE_REGISTRY.md`. The current v1 registry contains 19 concrete
+routes across 10 page-spec groups.
 
 All routes use the address-scoping rules in `CONTROL_ROOM_API_UI_SPEC.md`.
 Route parameters are decoded, schema-validated, and never interpolated into a
