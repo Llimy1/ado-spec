@@ -44,6 +44,10 @@ Layout Profile:
 - Profile Version:
 - Status:
 - Design Constraints:
+- Project Design System:
+- Screen Catalogs:
+- Responsive Matrices:
+- UI Acceptance Checklists:
 - Architecture Constraints:
 - Verification Profile:
 - Human Approval:

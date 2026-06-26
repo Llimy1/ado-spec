@@ -27,6 +27,9 @@ pins an approved immutable Spec Library revision.
 - `NESTJS_MONOREPO_ARCHITECTURE.md`: canonical NestJS, TypeORM, PostgreSQL, pnpm, and Turborepo architecture for ADO itself.
 - `CONTROL_ROOM_API_UI_SPEC.md`: REST/OpenAPI/SSE and Next.js control-room contract.
 - `CONTROL_ROOM_DESIGN_SYSTEM.md`: visual, responsive, interaction, accessibility, and QA contract for the ADO Control Room only.
+- `DESIGN_SYSTEM_REFERENCE_BENCHMARK.md`: external design-system references and ADO adoption boundaries.
+- `CONTROL_ROOM_DESIGN_TOKENS.md`: implementation-facing token contract for the ADO Control Room.
+- `CONTROL_ROOM_COMPONENT_SPECS.md`: reusable component behavior, accessibility, responsive, and verification contracts for the ADO Control Room.
 - `CONTROL_ROOM_PAGE_SPECS.md`: route-by-route API, state, UI, accessibility, responsive, and verification contracts for the Control Room.
 - `BOOTSTRAP_PROTOCOL.md`: bootstrap stages plus A1 entry and acceptance criteria.
 - `SPEC_LIBRARY_PLATFORM_BOUNDARY.md`: authority, versioning, and pinning contract between the Spec Library and ADO Platform.

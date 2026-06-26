@@ -38,6 +38,10 @@ Create a project spec with:
 - environments
 - project constraint profile
 - design constraints
+- project design system
+- screen catalog for UI-bearing components
+- responsive matrix for UI-bearing components
+- UI acceptance checklist for UI-bearing component work
 - architecture constraints
 - verification profile
 - protected branches
@@ -46,7 +50,10 @@ Create a project spec with:
 - safety policy
 - budget policy
 
-Project constraints are created from `SERVICE_CONSTRAINT_QUESTIONNAIRE.md` and approved by a human before execution.
+Project constraints are created from `SERVICE_CONSTRAINT_QUESTIONNAIRE.md` and
+approved by a human before execution. UI-bearing Projects additionally generate
+the design artifacts defined in `PROJECT_DESIGN_GOVERNANCE.md` from the design
+templates in `templates/`.
 The Project binds one approved SpecLibraryRevision before its first packet is
 generated. A later upgrade is a new human-approved Project configuration
 revision; it does not alter prior Feature Units, packets, runs, or PR evidence.
@@ -161,6 +168,9 @@ For a new project:
 2. Answer Service Constraint Questionnaire.
 3. Generate ProjectConstraintProfile.
 4. Generate project design, architecture, and verification documents.
+   UI-bearing Projects include `PROJECT_DESIGN_CONSTRAINTS.md`,
+   `PROJECT_DESIGN_SYSTEM.md`, `SCREEN_CATALOG.md`,
+   `RESPONSIVE_MATRIX.md`, and `UI_ACCEPTANCE_CHECKLIST.md`.
 5. Human approves ProjectConstraintProfile.
 6. Register repositories and components.
 7. Import roadmap.

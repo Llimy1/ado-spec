@@ -4,6 +4,11 @@ This is the visual and interaction contract for ADO's own Control Room in
 `apps/control`. It does not apply to managed Project products. Project design
 governance is defined in `PROJECT_DESIGN_GOVERNANCE.md`.
 
+The implementation-facing token list is defined in
+`CONTROL_ROOM_DESIGN_TOKENS.md`. Reusable component behavior is defined in
+`CONTROL_ROOM_COMPONENT_SPECS.md`. External reference boundaries are recorded
+in `DESIGN_SYSTEM_REFERENCE_BENCHMARK.md`.
+
 ## 1. Product Character
 
 The Control Room is a Korean-first, desktop-first operating console for a

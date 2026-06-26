@@ -10,6 +10,10 @@ business state directly, or receive raw runner/provider content. The database
 and the typed REST API remain authoritative as defined in
 `CONTROL_ROOM_API_UI_SPEC.md`.
 
+Visual foundations come from `CONTROL_ROOM_DESIGN_SYSTEM.md` and
+`CONTROL_ROOM_DESIGN_TOKENS.md`. Reusable component behavior comes from
+`CONTROL_ROOM_COMPONENT_SPECS.md`.
+
 ## 1. Contract Format
 
 Every Control Room page specification must define:

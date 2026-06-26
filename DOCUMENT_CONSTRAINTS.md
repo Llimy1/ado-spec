@@ -61,6 +61,11 @@ These documents define ADO itself.
 - `CODING_STANDARDS.md`
 - `NESTJS_MONOREPO_ARCHITECTURE.md`
 - `CONTROL_ROOM_API_UI_SPEC.md`
+- `CONTROL_ROOM_DESIGN_SYSTEM.md`
+- `DESIGN_SYSTEM_REFERENCE_BENCHMARK.md`
+- `CONTROL_ROOM_DESIGN_TOKENS.md`
+- `CONTROL_ROOM_COMPONENT_SPECS.md`
+- `CONTROL_ROOM_PAGE_SPECS.md`
 - `BOOTSTRAP_PROTOCOL.md`
 - `SPEC_LIBRARY_PLATFORM_BOUNDARY.md`
 - `MANAGED_PROJECT_MONOREPO_POLICY.md`
@@ -80,6 +85,11 @@ immutable Spec Library revision and manifest hash that selected them.
 These documents are derived from DB records and project configuration.
 
 - `ProjectSpec`
+- `ProjectDesignConstraints`
+- `ProjectDesignSystem`
+- `ScreenCatalog`
+- `ResponsiveMatrix`
+- `UIAcceptanceChecklist`
 - `RoadmapAnalysis`
 - `FeatureUnitSpec`
 - `ComponentWorkSpec`

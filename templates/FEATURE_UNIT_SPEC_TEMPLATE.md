@@ -25,6 +25,14 @@ generated_from_db: true
 
 - [ ] HV-1:
 
+## Human UI Verification By Component
+
+Required when the Feature Unit changes UI-bearing Components.
+
+| Component | Screens | Required viewport evidence | Human checks |
+|---|---|---|---|
+| | | | |
+
 ## Component Works
 
 | Component Work | Component | Required | Status |

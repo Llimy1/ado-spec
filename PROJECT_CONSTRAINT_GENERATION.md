@@ -87,6 +87,14 @@ For each project, ADO generates:
 - `SCREEN_CATALOG.md` for UI-bearing Components
 - `RESPONSIVE_MATRIX.md` for UI-bearing Components
 - `UI_ACCEPTANCE_CHECKLIST.md` for UI-bearing Components
+
+The generated document structure comes from:
+
+- `templates/PROJECT_DESIGN_CONSTRAINTS_TEMPLATE.md`
+- `templates/PROJECT_DESIGN_SYSTEM_TEMPLATE.md`
+- `templates/SCREEN_CATALOG_TEMPLATE.md`
+- `templates/RESPONSIVE_MATRIX_TEMPLATE.md`
+- `templates/UI_ACCEPTANCE_CHECKLIST_TEMPLATE.md`
 - `PROJECT_ARCHITECTURE.md`
 - `PROJECT_VERIFICATION_PROFILE.md`
 - `ROADMAP.md`

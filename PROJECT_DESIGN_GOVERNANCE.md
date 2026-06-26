@@ -74,6 +74,14 @@ the applicable artifacts:
 | `RESPONSIVE_MATRIX.md` | viewport breakpoints and component-level behavior at each range |
 | `UI_ACCEPTANCE_CHECKLIST.md` | automated and human verification requirements per Component Work |
 
+Project workspaces generate these documents from:
+
+- `templates/PROJECT_DESIGN_CONSTRAINTS_TEMPLATE.md`
+- `templates/PROJECT_DESIGN_SYSTEM_TEMPLATE.md`
+- `templates/SCREEN_CATALOG_TEMPLATE.md`
+- `templates/RESPONSIVE_MATRIX_TEMPLATE.md`
+- `templates/UI_ACCEPTANCE_CHECKLIST_TEMPLATE.md`
+
 Only the relevant excerpts and hashes enter an Agent ContextPacket. An agent
 does not receive unrelated screens, obsolete experiments, or every historical
 design revision.
