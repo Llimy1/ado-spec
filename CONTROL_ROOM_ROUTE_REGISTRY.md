@@ -69,7 +69,8 @@ and `CONTROL_ROOM_PAGE_SPECS.md` are updated together.
 | P-09 Decision Inbox And Incidents | 5 | `CONTROL_ROOM_PAGE_DETAIL_SPECS/P-09_DECISIONS_INCIDENTS.md` |
 | P-10 Artifacts, System Health, And Settings | 3 | `CONTROL_ROOM_PAGE_DETAIL_SPECS/P-10_ARTIFACTS_SYSTEM_SETTINGS.md` |
 
-Page detail specs are implementation contracts. They must not weaken
+Created page detail specs are implementation contracts. Planned detail specs
+must be created before implementing their routes. Detail specs must not weaken
 `CONTROL_ROOM_PAGE_SPECS.md`, `CONTROL_ROOM_COMPONENT_SPECS.md`, or this route
 registry.
 

@@ -39,6 +39,8 @@ revision.
 
 ## P-01: Projects
 
+Implementation detail spec: `CONTROL_ROOM_PAGE_DETAIL_SPECS/P-01_PROJECTS.md`.
+
 ### P-01.1 Identity And Boundaries
 
 | Property | Contract |

@@ -32,6 +32,7 @@ pins an approved immutable Spec Library revision.
 - `CONTROL_ROOM_COMPONENT_SPECS.md`: reusable component behavior, accessibility, responsive, and verification contracts for the ADO Control Room.
 - `CONTROL_ROOM_PAGE_SPECS.md`: route-by-route API, state, UI, accessibility, responsive, and verification contracts for the Control Room.
 - `CONTROL_ROOM_ROUTE_REGISTRY.md`: canonical Control Room route list, command classes, delivery slices, and page-detail-spec targets.
+- `CONTROL_ROOM_PAGE_DETAIL_SPECS/`: implementation-level detail specs for Control Room pages, beginning with P-01 Projects.
 - `BOOTSTRAP_PROTOCOL.md`: bootstrap stages plus A1 entry and acceptance criteria.
 - `SPEC_LIBRARY_PLATFORM_BOUNDARY.md`: authority, versioning, and pinning contract between the Spec Library and ADO Platform.
 - `MANAGED_PROJECT_MONOREPO_POLICY.md`: public managed-Project monorepo, coordinated work, branch, PR, and verification rules.
