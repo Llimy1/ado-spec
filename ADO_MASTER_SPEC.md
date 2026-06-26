@@ -9,9 +9,9 @@ ADO is a generic development automation and orchestration system for many projec
 ADO exists to reduce long, ambiguous context by turning broad roadmaps into explicit, small, reviewable units.
 
 The canonical ADO rules live in the separate ADO Spec Library repository. The
-NestJS application lives in the separate `ado-platform` repository and may run
-only against an approved, immutable Spec Library revision. The boundary and
-revision rules are defined in `SPEC_LIBRARY_PLATFORM_BOUNDARY.md`.
+Django + Next platform lives in the separate `ado-platform` repository and may
+run only against an approved, immutable Spec Library revision. The boundary
+and revision rules are defined in `SPEC_LIBRARY_PLATFORM_BOUNDARY.md`.
 
 ## 1. Hierarchy
 
@@ -38,8 +38,8 @@ Feature Unit is the functional unit. Component Work is the implementation/PR uni
 ## 3. Roles
 
 - `Human Owner`: final approver and final merge authority.
-- `Nest API + Next Control`: REST/OpenAPI/SSE control plane and approval surface.
-- `Worker`: job executor.
+- `Django API + Next Control`: REST/OpenAPI/SSE control plane and approval surface.
+- `Python Worker`: job executor.
 - `Policy Engine`: permission and safety gate.
 - `State Machine`: only component that applies state transitions.
 - `Codex Planner`: roadmap decomposition and spec drafting.
@@ -216,7 +216,7 @@ Project/service constraints
 ADO implementation constraints define how this orchestration system is built. They are defined in:
 
 - `CODING_STANDARDS.md`
-- `NESTJS_MONOREPO_ARCHITECTURE.md`
+- `DJANGO_NEXT_PLATFORM_ARCHITECTURE.md`
 - `CONTROL_ROOM_API_UI_SPEC.md`
 - `CONTROL_ROOM_DESIGN_SYSTEM.md`
 - `DESIGN_SYSTEM_REFERENCE_BENCHMARK.md`
@@ -268,7 +268,7 @@ ADO common constraints are stable. Project constraints vary by service.
 v1-alpha uses:
 
 ```text
-NestJS standalone Worker + PostgreSQL DB queue
+Python Worker + PostgreSQL DB queue
 ```
 
 v1-stable may add optional wake-up, scale, or remote artifact adapters only if
@@ -426,7 +426,7 @@ ADO does not merge.
 ## 17. UI
 
 Database inspection tooling is not the control room. The Next.js Control app
-uses the Nest REST/OpenAPI/SSE boundary and never writes the DB directly.
+uses the Django REST/OpenAPI/SSE boundary and never writes the DB directly.
 
 Essential screens:
 
@@ -475,12 +475,12 @@ Goal: DB/state/worker/UI/artifact foundation.
 
 Feature Units:
 
-- FU-A1 NestJS monorepo/PostgreSQL bootstrap
+- FU-A1 Django + Next monorepo/PostgreSQL bootstrap
 - FU-A2 Core DB models
 - FU-A3 State Machine / Policy Engine
 - FU-A4 DB Job Queue + Worker
 - FU-A5 ArtifactStore + Markdown generation
-- FU-A6 Next.js Control Room + Nest API operational slice
+- FU-A6 Next.js Control Room + Django API operational slice
 
 ### v1-beta
 

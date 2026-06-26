@@ -1,8 +1,9 @@
 # Deprecated: ADO Django Architecture
 
-> Historical draft only. `NESTJS_MONOREPO_ARCHITECTURE.md` is the canonical
-> implementation architecture for ADO v1. This file must not be used to create
-> new ADO code, schemas, commands, or tests.
+> Historical Django-only draft. `DJANGO_NEXT_PLATFORM_ARCHITECTURE.md` is the
+> canonical implementation architecture for ADO v1. This file is retained only
+> for early design context and must not be used to create new ADO code,
+> schemas, commands, or tests.
 
 This document defines the Django architecture for implementing Agent Development Orchestrator (ADO).
 

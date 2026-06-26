@@ -2,9 +2,9 @@
 
 This document is the canonical relational data contract for ADO v1.
 
-It turns the master specification into TypeORM/PostgreSQL entities and tables. It is not a
-database migration and it does not authorize a model to bypass policy or the
-State Machine.
+It turns the master specification into Django ORM/PostgreSQL models and tables.
+It is not a database migration and it does not authorize a model to bypass
+policy or the State Machine.
 
 Related documents:
 

@@ -5,8 +5,8 @@ This directory is the canonical specification library for Agent Development Orch
 ADO is a generic development orchestration system. It is not tied to a single product. Each real product project should derive its own project-level documents from these base documents.
 
 This repository is the **ADO Spec Library**, not the ADO application monorepo.
-The NestJS implementation lives in a separate `ado-platform` repository and
-pins an approved immutable Spec Library revision.
+The Django + Next implementation lives in a separate `ado-platform` repository
+and pins an approved immutable Spec Library revision.
 
 ## Canonical Documents
 
@@ -24,7 +24,8 @@ pins an approved immutable Spec Library revision.
 - `STATE_TRANSITION_RULES.md`: allowed state transitions and required transition rules.
 - `EVIDENCE_GATES.md`: required evidence for important state transitions.
 - `CODING_STANDARDS.md`: implementation coding rules for ADO itself.
-- `NESTJS_MONOREPO_ARCHITECTURE.md`: canonical NestJS, TypeORM, PostgreSQL, pnpm, and Turborepo architecture for ADO itself.
+- `DJANGO_NEXT_PLATFORM_ARCHITECTURE.md`: canonical Django, Python Worker, Next.js, PostgreSQL, OpenAPI, uv, and pnpm architecture for ADO itself.
+- `NESTJS_MONOREPO_ARCHITECTURE.md`: historical NestJS/TypeORM draft only; it is not a current implementation contract.
 - `CONTROL_ROOM_API_UI_SPEC.md`: REST/OpenAPI/SSE and Next.js control-room contract.
 - `CONTROL_ROOM_DESIGN_SYSTEM.md`: visual, responsive, interaction, accessibility, and QA contract for the ADO Control Room only.
 - `DESIGN_SYSTEM_REFERENCE_BENCHMARK.md`: external design-system references and ADO adoption boundaries.
@@ -35,13 +36,13 @@ pins an approved immutable Spec Library revision.
 - `SPEC_LIBRARY_PLATFORM_BOUNDARY.md`: authority, versioning, and pinning contract between the Spec Library and ADO Platform.
 - `MANAGED_PROJECT_MONOREPO_POLICY.md`: public managed-Project monorepo, coordinated work, branch, PR, and verification rules.
 - `MANAGED_PROJECT_FILE_STRUCTURE_POLICY.md`: default managed-Project monorepo and Component-internal file structure generation rules.
-- `DJANGO_ARCHITECTURE.md`: historical Django draft only; it is not a current implementation contract.
+- `DJANGO_ARCHITECTURE.md`: historical Django-only draft; it is superseded by `DJANGO_NEXT_PLATFORM_ARCHITECTURE.md`.
 - `SERVICE_LAYER_RULES.md`: service, selector, policy, runner, and state-machine boundaries.
 - `TESTING_STRATEGY.md`: required test layers and safety coverage for ADO.
 - `WORKER_EXECUTION_CONTRACT.md`: worker lifecycle, lease, outbox, runner, timeout, and recovery contract.
 - `JOB_HANDLER_CATALOG.md`: enabled Job types and their handler-level contracts.
 - `WORKER_OPERATIONS.md`: Worker commands, health, shutdown, recovery, and control-room operations.
-- `DB_MODEL_SPEC.md`: canonical TypeORM/PostgreSQL table, field, and relationship contract.
+- `DB_MODEL_SPEC.md`: canonical Django ORM/PostgreSQL table, field, and relationship contract.
 - `DATABASE_CONSTRAINTS.md`: PostgreSQL constraints, locking, indexes, migrations, and append-only protection.
 - `DATA_LIFECYCLE.md`: data creation, validation, retention, recovery, and deletion rules.
 - `DATABASE_ERD.md`: relationship map for the canonical database contract.
